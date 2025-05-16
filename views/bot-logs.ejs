@@ -1,11 +1,22 @@
+<%- /* views/bot-logs.ejs */ %>
 <%- include('partials/header') %>
 
-<div class="container mt-4 mb-5"> <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0"><i class="fas fa-file-alt me-2"></i><%= pageTitle %></h2>
-        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>До списку ботів</a>
+        <div>
+            <% if (locals.navBotId) { %> 
+                <a href="/bots/<%= locals.navBotId %>/manage/status" class="btn btn-outline-primary me-2"><i class="fas fa-cogs me-1"></i></a>
+            <% } %>
+            <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i></a>
+        </div>
     </div>
 
-    <% if (locals.messages && locals.messages.error) { %> <div class="alert alert-danger" role="alert"><%= locals.messages.error %></div>
+    <% if (locals.messages && locals.messages.error) { %> 
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= locals.messages.error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     <% } %>
     
     <div id="pinnedErrorContainer" class="alert alert-danger sticky-top shadow-sm" role="alert" style="display: none; top: 70px; z-index: 1000; margin-bottom: 1rem;">
@@ -19,7 +30,8 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <span>Вміст лог-файлу: <code>logs/logs-<%= bot.botId %>.txt</code></span>
             <button class="btn btn-sm btn-light" id="refreshLogsBtn" title="Оновити логи">
-                <i class="fas fa-sync-alt"></i> Оновити (<span id="countdown">5</span>с) </button>
+                <i class="fas fa-sync-alt"></i> Оновити (<span id="countdown">5</span>с)
+            </button>
         </div>
         <div class="card-body">
             <pre id="logContentOutput" style="white-space: pre-wrap; word-wrap: break-word; background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 0.25rem; max-height: 60vh; overflow-y: auto; font-size: 0.85em;"></pre>
@@ -42,12 +54,11 @@
 </div>
 
 <script>
-    const botDbId = "<%= bot._id %>";
-    const botInternalId = "<%= bot.botId %>"; 
+    const botDbId = "<%= bot._id %>"; // bot._id передається з маршруту як bot.id
+    const botInternalId = "<%= bot.botId %>"; // bot.botId передається з маршруту
     const logContentOutput = document.getElementById('logContentOutput');
     const refreshLogsBtn = document.getElementById('refreshLogsBtn');
     const countdownElement = document.getElementById('countdown');
-    
     const pinnedErrorContainer = document.getElementById('pinnedErrorContainer');
     const pinnedErrorMessageElem = document.getElementById('pinnedErrorMessage');
     const pinnedErrorTimeElem = document.getElementById('pinnedErrorTime');
@@ -57,7 +68,7 @@
     const consoleFeedback = document.getElementById('consoleFeedback');
 
     let countdownIntervalId;
-    let timeLeft = 5; // ЗМІНЕНО: Інтервал автооновлення тепер 5 секунд
+    let timeLeft = 5; 
 
     async function fetchLogs() {
         if (refreshLogsBtn) {
@@ -66,17 +77,15 @@
                 refreshLogsBtn.querySelector('i.fas').classList.add('fa-spin');
              }
         }
-
         try {
             const response = await fetch(`/bots/api/${botDbId}/logs-content`);
             if (!response.ok) {
                 const errorData = await response.text();
                 logContentOutput.textContent = `Помилка завантаження логів: ${response.status} ${response.statusText}. ${errorData}`;
                 if (pinnedErrorContainer) pinnedErrorContainer.style.display = 'none';
-                return; 
+                return;
             }
             const data = await response.json();
-            
             if (data.pinnedError) {
                 pinnedErrorMessageElem.textContent = data.pinnedError;
                 if (data.lastPinnedErrorTime) {
@@ -90,12 +99,10 @@
             } else {
                 pinnedErrorContainer.style.display = 'none';
             }
-
             logContentOutput.textContent = data.logs || 'Логи порожні.';
             setTimeout(() => { 
                 logContentOutput.scrollTop = logContentOutput.scrollHeight;
             }, 100);
-
         } catch (error) {
             console.error('Failed to fetch logs:', error);
             logContentOutput.textContent = 'Не вдалося завантажити логи. Перевірте консоль браузера або логи сервера.';
@@ -107,15 +114,14 @@
                     refreshLogsBtn.querySelector('i.fas').classList.remove('fa-spin');
                 }
             }
-            resetCountdown(); 
+            resetCountdown();
         }
     }
 
     function startCountdown() {
-        clearInterval(countdownIntervalId); 
-        timeLeft = 5; // ЗМІНЕНО: Інтервал автооновлення тепер 5 секунд
+        clearInterval(countdownIntervalId);
+        timeLeft = 5; 
         if(countdownElement) countdownElement.textContent = timeLeft;
-        
         countdownIntervalId = setInterval(() => {
             timeLeft--;
             if (countdownElement) countdownElement.textContent = timeLeft > 0 ? timeLeft : 0;
@@ -141,9 +147,9 @@
             consoleFeedback.textContent = message;
             consoleFeedback.className = 'mb-2'; 
             if (isError) {
-                consoleFeedback.classList.add('text-danger', 'error'); // Використовуємо власні класи .error/.success для CSS
+                consoleFeedback.classList.add('text-danger');
             } else {
-                consoleFeedback.classList.add('text-success', 'success');
+                consoleFeedback.classList.add('text-success');
             }
         }
     }
@@ -164,11 +170,11 @@
             
             switch (command.toLowerCase()) {
                 case '/refresh':
-                    await fetchLogs(); 
+                    await fetchLogs();
                     displayConsoleFeedback('Логи оновлено.', false);
                     break;
                 case '/status':
-                    response = await fetch(`/bots/process-status/${botDbId}`); // Використовуємо існуючий ендпоінт
+                    response = await fetch(`/bots/process-status/${botDbId}`);
                     if (!response.ok) throw new Error(`HTTP помилка! Статус: ${response.status}`);
                     data = await response.json();
                     let statusMessage = `Статус: ${data.status || 'N/A'}. БД: ${data.dbStatus || 'N/A'}. Повідомлення: ${data.message || 'Немає'}.`;
@@ -178,27 +184,27 @@
                 case '/start':
                     response = await fetch(`/bots/api/${botDbId}/start`, { method: 'POST' });
                     if (!response.ok) { 
-                        data = await response.json().catch(() => ({ message: `HTTP помилка ${response.status}`})); 
+                        data = await response.json().catch(() => ({ message: `HTTP помилка ${response.status}`}));
                         throw new Error(data.message || `Помилка сервера: ${response.status}`);
                     }
                     data = await response.json();
                     displayConsoleFeedback(data.message || 'Команда /start виконана.', !data.success);
                     if(data.success) {
-                        await fetchLogs(); // ЗМІНЕНО: Негайне оновлення логів
-                        setTimeout(fetchLogs, 2000); // Додаткове оновлення для логів запуску
+                        await fetchLogs(); 
+                        setTimeout(fetchLogs, 2000);
                     }
                     break;
                 case '/stop':
                     response = await fetch(`/bots/api/${botDbId}/stop`, { method: 'POST' });
-                     if (!response.ok) {
+                    if (!response.ok) {
                         data = await response.json().catch(() => ({ message: `HTTP помилка ${response.status}`}));
                         throw new Error(data.message || `Помилка сервера: ${response.status}`);
                     }
                     data = await response.json();
                     displayConsoleFeedback(data.message || 'Команда /stop виконана.', !data.success);
                     if(data.success) {
-                        await fetchLogs(); // ЗМІНЕНО: Негайне оновлення логів
-                        setTimeout(fetchLogs, 1500); // Додаткове оновлення для логів зупинки
+                        await fetchLogs();
+                        setTimeout(fetchLogs, 1500);
                     }
                     break;
                 default:

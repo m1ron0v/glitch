@@ -1,3 +1,4 @@
+// server.js
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -8,164 +9,193 @@ const session = require("express-session");
 const flash = require("connect-flash");
 
 const indexRouter = require("./routes/index");
-const { router: botRouter, initializeBotsOnStartup } = require("./routes/bots"); // runningBotProcesses не експортується/не потрібне тут
+const {
+  router: botRouter,
+  initializeBotsOnStartup,
+  stopBotProcess: stopSingleBotProcessForShutdown,
+} = require("./routes/bots"); // Оновлено для graceful shutdown
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Налаштування Mongoose
-// mongoose.set('strictQuery', true); // Розкоментуйте, якщо Mongoose видає попередження про strictQuery
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => console.log("MongoDB Connected Successfully"))
-  .catch((err) => console.error("MongoDB Connection Error:", err));
+  .then(() => console.log("[MongoDB] Connected Successfully to MongoDB Atlas."))
+  .catch((err) => console.error("[MongoDB] Connection Error:", err));
 
-// Створення папки 'app' якщо її немає
+mongoose.connection.on("error", (err) => {
+  console.error("[MongoDB] Mongoose runtime error:", err);
+});
+
 const appDir = path.join(__dirname, "app");
 fs.ensureDirSync(appDir);
-
-// Створення папки 'logs' якщо її немає (НОВЕ)
 const logsDir = path.join(__dirname, "logs");
 fs.ensureDirSync(logsDir);
 
-// Налаштування EJS
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Налаштування для flash повідомлень та сесій
 if (!process.env.SESSION_SECRET) {
   console.warn(
-    "УВАГА: Змінна SESSION_SECRET не встановлена! Використовується тимчасовий ключ. Встановіть її у .env для безпеки."
+    "УВАГА: Змінна SESSION_SECRET не встановлена в .env! Використовується тимчасовий ключ. Це НЕБЕЗПЕЧНО для продакшену."
   );
 }
 app.use(
   session({
     secret:
-      process.env.SESSION_SECRET ||
-      "temporary_fallback_secret_key_for_session_12345!@#$$",
+      process.env.SESSION_SECRET || "temporary_very_insecure_secret_key_123!@#",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      maxAge: 5 * 60 * 1000,
+      maxAge: 10 * 60 * 1000,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     },
   })
 );
 app.use(flash());
 
-// Middleware для передачі flash повідомлень та значень форм до всіх шаблонів
 app.use((req, res, next) => {
-  const successMessages = req.flash("success");
-  const errorMessages = req.flash("error");
-  const commandSuccessMsg = req.flash("command_success");
-  const commandErrorMsg = req.flash("command_error");
-  const fileEditSuccessMsg = req.flash("file_edit_success");
-  const fileEditErrorMsg = req.flash("file_edit_error");
-
   res.locals.messages = {
-    success: successMessages.length > 0 ? successMessages[0] : null,
-    error: errorMessages.length > 0 ? errorMessages[0] : null,
-    command_success: commandSuccessMsg.length > 0 ? commandSuccessMsg[0] : null,
-    command_error: commandErrorMsg.length > 0 ? commandErrorMsg[0] : null,
-    file_edit_success:
-      fileEditSuccessMsg.length > 0 ? fileEditSuccessMsg[0] : null,
-    file_edit_error: fileEditErrorMsg.length > 0 ? fileEditErrorMsg[0] : null,
+    success: req.flash("success")[0] || null,
+    error: req.flash("error")[0] || null,
+    command_success: req.flash("command_success")[0] || null,
+    command_error: req.flash("command_error")[0] || null,
+    file_edit_success: req.flash("file_edit_success")[0] || null,
+    file_edit_error: req.flash("file_edit_error")[0] || null,
+    command_delete_success: req.flash("command_delete_success")[0] || null,
+    command_delete_error: req.flash("command_delete_error")[0] || null,
   };
-
-  res.locals.newCommandName = req.flash("formNewCommandName")[0] || "";
-  res.locals.actionCode = req.flash("formActionCode")[0] || "";
   res.locals.token = req.flash("formToken")[0] || "";
   res.locals.statusCheckCommand = req.flash("formStatusCommand")[0] || "";
-
+  res.locals.newCommandName = req.flash("formNewCommandName")[0] || "";
+  res.locals.actionCode = req.flash("formActionCode")[0] || "";
+  res.locals.commandNameToDeleteValue =
+    req.flash("formCommandNameToDelete")[0] || "";
   next();
 });
 
-// Маршрути
 app.use("/", indexRouter);
 app.use("/bots", botRouter);
 
-// Обробка помилки 404
 app.use((req, res, next) => {
   res.status(404).render("error", {
-    message: "Сторінку не знайдено (404). Перевірте URL-адресу.",
+    pageTitle: "Помилка 404",
+    message:
+      "Сторінку не знайдено (404). Перевірте URL-адресу або поверніться на головну.",
     error: {},
+    activeTab: "",
+    navBotId: null,
   });
 });
 
-// Глобальний обробник помилок сервера
 app.use((err, req, res, next) => {
-  console.error("Global Error Handler Triggered:");
-  console.error(err.stack || err);
-
+  console.error("[Global Error Handler] Помилка на сервері:");
+  console.error(err.message);
+  console.error(err.stack);
   const statusCode = err.status || 500;
   const isDevelopment =
     process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
-
   res.status(statusCode).render("error", {
+    pageTitle: `Помилка ${statusCode}`,
     message:
-      err.message ||
-      `Сталася серверна помилка (${statusCode}). Спробуйте пізніше.`,
+      err.publicMessage ||
+      `Сталася серверна помилка (${statusCode}). Спробуйте, будь ласка, пізніше.`,
     error: isDevelopment
-      ? { status: statusCode, stack: err.stack, message: err.message }
+      ? { status: statusCode, message: err.message, stack: err.stack }
       : {},
+    activeTab: "",
+    navBotId: null,
   });
 });
 
-// Запуск сервера
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log(
-    `Server is running on http://localhost:${PORT} or your Glitch URL`
+    `[Server] Express server is running on http://localhost:${PORT} (або ваш Glitch URL)`
+  );
+  console.log(
+    `[Server] NODE_ENV: ${
+      process.env.NODE_ENV || "not set (defaults to development-like behavior)"
+    }`
   );
   if (mongoose.connection.readyState === 1) {
-    console.log("MongoDB is connected. Attempting to initialize bots...");
+    console.log(
+      "[Server] MongoDB вже підключено. Спроба ініціалізації ботів..."
+    );
     await initializeBotsOnStartup();
   } else {
     console.warn(
-      "MongoDB is not connected yet. Bots will not be initialized at startup. Check connection."
+      "[Server] MongoDB ще не підключено. Ініціалізація ботів буде відкладена до підключення."
     );
     mongoose.connection.once("open", async () => {
       console.log(
-        "MongoDB connected after server start. Re-attempting bot initialization..."
+        "[Server] MongoDB підключено після старту сервера. Повторна спроба ініціалізації ботів..."
       );
       await initializeBotsOnStartup();
     });
   }
 });
 
-// Обробка "чистого" виходу з додатку
 async function gracefulShutdown(signal) {
-  console.log(`${signal} received, shutting down gracefully...`);
-
-  // Отримуємо runningBotProcesses з модуля bots.js, якщо він експортується
-  // Якщо ні, то ця частина не спрацює для зупинки ботів при виході.
-  // У попередній версії routes/bots.js runningBotProcesses не експортувався.
-  // Для простоти, зараз ця логіка може не зупиняти ботів коректно при SIGTERM/SIGINT на Glitch,
-  // оскільки Glitch може просто вбити процес.
-  // const { runningBotProcesses: activeBots } = require('./routes/bots'); // Потребує експорту з bots.js
-
-  console.log("Attempting to close MongoDB connection...");
-  mongoose.connection
-    .close(false)
-    .then(() => {
-      console.log("MongoDb connection closed.");
-      process.exit(0);
-    })
-    .catch((err) => {
-      console.error("Error closing MongoDB connection during shutdown:", err);
-      process.exit(1);
-    });
-
-  // Даємо трохи часу на закриття з'єднання
+  console.log(
+    `[Server] ${signal} отримано. Ініційовано коректне завершення роботи...`
+  );
+  server.close(async () => {
+    console.log("[Server] HTTP сервер закрито.");
+    const { runningBotProcesses } = require("./routes/bots"); // Отримуємо актуальний список
+    if (runningBotProcesses && Object.keys(runningBotProcesses).length > 0) {
+      console.log("[Server] Спроба зупинки активних процесів ботів...");
+      // Нам потрібна функція stopBotProcess з routes/bots.js або експортований runningBotProcesses
+      // Якщо stopSingleBotProcessForShutdown було експортовано як stopBotProcess
+      const stopPromises = Object.keys(runningBotProcesses).map((botDbId) => {
+        // Потрібно отримати botInternalId для логування, якщо можливо
+        // Це спрощення, оскільки botInternalId не зберігається разом з процесом напряму
+        return stopSingleBotProcessForShutdown(
+          botDbId,
+          `bot-${botDbId.substring(0, 6)}-on-shutdown`
+        );
+      });
+      try {
+        await Promise.all(stopPromises);
+        console.log(
+          "[Server] Всі активні процеси ботів отримали команду зупинки."
+        );
+      } catch (stopErr) {
+        console.error(
+          "[Server] Помилка під час масової зупинки ботів:",
+          stopErr
+        );
+      }
+    } else {
+      console.log("[Server] Немає активних процесів ботів для зупинки.");
+    }
+    console.log("[Server] Спроба закриття з'єднання з MongoDB...");
+    mongoose.connection
+      .close(false)
+      .then(() => {
+        console.log("[Server] З'єднання з MongoDB успішно закрито.");
+        process.exit(0);
+      })
+      .catch((err) => {
+        console.error(
+          "[Server] Помилка при закритті з'єднання з MongoDB:",
+          err
+        );
+        process.exit(1);
+      });
+  });
   setTimeout(() => {
-    console.error("MongoDB connection close timed out. Forcing exit.");
+    console.error("[Server] Таймаут коректного завершення. Примусовий вихід.");
     process.exit(1);
-  }, 5000); // 5 секунд таймаут
+  }, 10000);
 }
 
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+module.exports = app;

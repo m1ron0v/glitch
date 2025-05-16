@@ -52,17 +52,18 @@ bot.onText(/^\/job(?:\s+(.*))?$/, async (msg, match) => {
 });
 
 
-// BOT_COMMAND_HANDLER: /myid
-bot.onText(/^\/myid(?:\s+(.*))?$/, async (msg, match) => {
+
+// BOT_COMMAND_HANDLER: /id
+bot.onText(/^\/id(?:\s+(.*))?$/, async (msg, match) => {
     const chatId = msg.chat.id;
     const argsText = match && match[1] ? match[1].trim() : null;
-    console.log(`[rZozFkkVuAutv9d72WsxP2] Command /myid received with args: '${argsText}' from chat ${chatId}`);
+    console.log(`[rZozFkkVuAutv9d72WsxP2] Command /id received with args: '${argsText}' from chat ${chatId}`);
     try {
         bot.sendMessage(chatId, `Ваш ID: ${msg.from.id}`);
     } catch (e) {
-        console.error(`[rZozFkkVuAutv9d72WsxP2] Error in user-defined action for command /myid:\n`, e);
+        console.error(`[rZozFkkVuAutv9d72WsxP2] Error in user-defined action for command /id:\n`, e);
         if (bot && typeof bot.sendMessage === 'function') {
-            bot.sendMessage(chatId, 'Вибачте, під час виконання команди "myid" сталася внутрішня помилка.').catch(err => console.error(`[rZozFkkVuAutv9d72WsxP2] Failed to send error message to chat ${chatId}`, err));
+            bot.sendMessage(chatId, 'Вибачте, під час виконання команди "id" сталася внутрішня помилка.').catch(err => console.error(`[rZozFkkVuAutv9d72WsxP2] Failed to send error message to chat ${chatId}`, err));
         }
     }
 });

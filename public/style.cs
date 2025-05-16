@@ -3,7 +3,7 @@
 /* :root визначає змінні для світлої теми (за замовчуванням) */
 :root {
   --body-bg: #eef1f5;
-  --text-color: #2c3e50;
+  --text-color: #2c3e50; /* Основний темний текст для світлої теми */
   --text-muted-color: #6c757d;
   --link-color: #007bff;
   --link-hover-color: #0056b3;
@@ -61,32 +61,26 @@
   --alert-warning-border: #ffeeba;
 
   --input-bg: #ffffff;
-  --input-color: #212529;
+  --input-color: #212529; /* Колір тексту в активних полях */
   --input-border-color: #ced4da;
   --input-disabled-bg: #e9ecef;
-  --input-disabled-color: #495057;
+  --input-disabled-color: #495057; /* Темніший сірий для тексту в неактивних полях */
   --input-disabled-border-color: #ced4da;
   --input-focus-border-color: #86b7fe;
   --input-focus-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 
-  /* Зміни для вкладок у світлій темі */
-  --nav-tabs-border-color: #dee2e6; /* Загальна нижня лінія вкладок */
-  --nav-tabs-link-color: #495057; /* Колір тексту неактивних вкладок (темно-сірий) */
-  --nav-tabs-link-hover-bg: #e9ecef; /* Фон неактивної вкладки при наведенні */
-  --nav-tabs-link-hover-color: #0056b3; /* Колір тексту неактивної вкладки при наведенні */
-  --nav-tabs-link-hover-border-color: #ddd #ddd var(--nav-tabs-border-color); /* Рамка при наведенні */
-
-  --nav-tabs-link-active-color: var(
-    --link-color
-  ); /* Колір тексту активної вкладки (основний колір посилань) */
+  --nav-tabs-border-color: #dee2e6;
+  --nav-tabs-link-color: #495057;
+  --nav-tabs-link-hover-border-color: #e9ecef #e9ecef var(--body-bg);
+  --nav-tabs-link-hover-color: var(--link-hover-color);
+  --nav-tabs-link-active-color: var(--link-color);
   --nav-tabs-link-active-bg: var(
     --card-bg
-  ); /* Фон активної вкладки (як фон картки або тіла сторінки) */
-  --nav-tabs-link-active-border-color: var(
-    --nav-tabs-border-color
-  ); /* Колір рамки активної */
+  ); /* Фон активної вкладки як фон картки */
+  --nav-tabs-link-active-border-color: var(--nav-tabs-border-color)
+    var(--nav-tabs-border-color) var(--nav-tabs-link-active-bg);
 
-  --pre-bg: #f8f9fa;
+  --pre-bg: #f8f9fa; /* Фон для <pre> у світлій темі */
   --pre-text-color: var(--text-color);
   --pre-border-color: var(--card-border-color);
 }
@@ -98,7 +92,7 @@ html.dark-theme-preload :root {
 }
 body.dark-theme {
   --body-bg: #121212;
-  --text-color: #e4e6eb;
+  --text-color: #e4e6eb; /* ОСНОВНИЙ СВІТЛИЙ ТЕКСТ ДЛЯ ТЕМНОЇ ТЕМИ */
   --text-muted-color: #a8b3cf;
   --link-color: #79c0ff;
   --link-hover-color: #a1d1ff;
@@ -110,13 +104,13 @@ body.dark-theme {
   --card-border-color: #3a3b3c;
 
   --navbar-bg: #1c1c1c;
-  --navbar-color: rgba(255, 255, 255, 0.8);
+  --navbar-color: rgba(255, 255, 255, 0.8); /* Яскравіше */
   --navbar-brand-color: #ffffff;
   --nav-link-hover-bg: rgba(255, 255, 255, 0.1);
   --nav-link-active-color: #ffffff;
 
   --footer-bg: #1c1c1c;
-  --footer-color: rgba(255, 255, 255, 0.8);
+  --footer-color: rgba(255, 255, 255, 0.8); /* Яскравіше */
   --footer-link-color: rgba(255, 255, 255, 0.9);
   --footer-link-hover-color: #20c997;
 
@@ -151,26 +145,23 @@ body.dark-theme {
   --input-bg: #2a2a2a;
   --input-color: #e4e6eb;
   --input-border-color: #44474a;
-  --input-disabled-bg: #313437;
-  --input-disabled-color: #9098a1;
+  --input-disabled-bg: #313437; /* Темний фон для неактивних полів */
+  --input-disabled-color: #9098a1; /* Світліший сірий текст для неактивних */
   --input-disabled-border-color: #44474a;
   --input-focus-border-color: #2579fc;
   --input-focus-box-shadow: 0 0 0 0.25rem rgba(37, 121, 252, 0.4);
 
-  /* Зміни для вкладок у темній темі */
   --nav-tabs-border-color: #3a3b3c;
   --nav-tabs-link-color: #a8b3cf;
-  --nav-tabs-link-hover-bg: #313437;
+  --nav-tabs-link-hover-border-color: #44474a #44474a var(--body-bg);
   --nav-tabs-link-hover-color: var(--link-hover-color);
-  --nav-tabs-link-hover-border-color: #44474a #44474a
-    var(--nav-tabs-border-color);
-
   --nav-tabs-link-active-color: var(--link-color);
-  --nav-tabs-link-active-bg: var(--card-bg);
-  --nav-tabs-link-active-border-color: var(--nav-tabs-border-color);
+  --nav-tabs-link-active-bg: var(--body-bg);
+  --nav-tabs-link-active-border-color: var(--nav-tabs-border-color)
+    var(--nav-tabs-border-color) var(--nav-tabs-link-active-bg);
 
-  --pre-bg: #2a2a2a;
-  --pre-text-color: var(--text-color);
+  --pre-bg: #2a2a2a; /* Фон для <pre> у темній темі */
+  --pre-text-color: var(--text-color); /* Основний світлий текст */
   --pre-border-color: var(--card-border-color);
 }
 
@@ -179,7 +170,7 @@ body {
   padding-top: 70px;
   padding-bottom: 80px;
   background-color: var(--body-bg);
-  color: var(--text-color);
+  color: var(--text-color); /* ЗАСТОСОВУЄМО ОСНОВНИЙ КОЛІР ТЕКСТУ */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -202,7 +193,9 @@ h3,
 h4,
 h5,
 h6 {
-  color: var(--text-color);
+  color: var(
+    --text-color
+  ); /* Переконуємось, що заголовки теж використовують змінну */
 }
 
 /* --- Навігаційна панель --- */
@@ -301,12 +294,13 @@ body.dark-theme .navbar-toggler-icon {
 }
 .card-header {
   background-color: var(--card-header-bg);
-  color: var(--card-header-color);
+  color: var(--card-header-color); /* ЗАСТОСОВУЄМО ЗМІННУ */
   border-bottom: 1px solid var(--card-border-color);
   font-weight: 500;
   padding: 0.75rem 1rem;
   transition: all 0.2s ease-in-out;
 }
+/* Специфічні фони для card-header, якщо вони не використовують змінні */
 .card-header.bg-primary {
   background-color: var(--btn-primary-bg) !important;
   color: var(--btn-primary-text) !important;
@@ -329,27 +323,21 @@ body.dark-theme .navbar-toggler-icon {
 .card-header.bg-dark {
   background-color: #343a40 !important;
   color: white !important;
-}
+} /* Залишаємо Bootstrap стандарт */
 body.dark-theme .card-header.bg-dark {
   background-color: #212529 !important;
   color: #f8f9fa !important;
-}
+} /* Адаптація для темної теми */
 
 .card-body {
   padding: 1rem;
-  color: var(--text-color);
+  color: var(--text-color); /* ЗАСТОСОВУЄМО ОСНОВНИЙ КОЛІР ТЕКСТУ */
 }
 .card-body p,
 .card-body h5,
-.card-body strong,
-.card-body div {
-  color: var(
-    --text-color
-  ); /* Застосовуємо до всіх текстових елементів всередині card-body */
-}
-.card-body .text-muted {
-  /* Окремо для muted тексту всередині карток */
-  color: var(--text-muted-color) !important;
+.card-body strong {
+  /* Переконуємось, що текст всередині картки теж змінює колір */
+  color: var(--text-color);
 }
 
 .card-footer {
@@ -363,7 +351,7 @@ body.dark-theme .card-header.bg-dark {
 .form-label {
   font-weight: 500;
   margin-bottom: 0.3rem;
-  color: var(--text-color);
+  color: var(--text-color); /* ЗАСТОСОВУЄМО ОСНОВНИЙ КОЛІР ТЕКСТУ */
 }
 .form-control,
 .form-select {
@@ -416,6 +404,7 @@ body.dark-theme .card-header.bg-dark {
   min-height: 200px;
 }
 #logContentOutput {
+  /* Завжди темний, як визначено в змінних */
   background-color: var(--log-output-bg) !important;
   color: var(--log-output-color) !important;
   padding: 0.75rem;
@@ -424,11 +413,11 @@ body.dark-theme .card-header.bg-dark {
   font-size: 0.85em;
 }
 pre {
-  background-color: var(--pre-bg);
-  color: var(--pre-text-color);
+  background-color: var(--pre-bg); /* Використовуємо нову змінну */
+  color: var(--pre-text-color); /* Використовуємо нову змінну */
   padding: 0.75rem;
   border-radius: 0.375rem;
-  border: 1px solid var(--pre-border-color);
+  border: 1px solid var(--pre-border-color); /* Використовуємо нову змінну */
   white-space: pre-wrap;
   word-break: break-all;
   font-size: 0.85em;
@@ -508,53 +497,19 @@ pre {
   font-size: 0.8em;
   font-weight: 600;
 }
-/* Специфічні кольори для значків статусу, якщо потрібно */
-.badge.bg-success {
-  color: #fff !important;
-} /* Білий текст на зеленому */
-body.dark-theme .badge.bg-success {
-  color: #fff !important;
-}
-.badge.bg-danger {
-  color: #fff !important;
-} /* Білий текст на червоному */
-body.dark-theme .badge.bg-danger {
-  color: #fff !important;
-}
-.badge.bg-info.text-dark {
-  color: #000 !important;
-} /* Чорний текст на світло-синьому */
-body.dark-theme .badge.bg-info.text-dark {
-  color: #fff !important;
-  background-color: var(--link-color) !important;
-} /* Світлий текст на синьому */
-.badge.bg-secondary {
-  color: #fff !important;
-}
-body.dark-theme .badge.bg-secondary {
-  color: var(--text-color) !important;
-  background-color: #44474a !important;
-}
-.badge.bg-warning.text-dark {
-  color: #000 !important;
-}
-body.dark-theme .badge.bg-warning.text-dark {
-  color: #000 !important;
-  background-color: #ffca2c !important;
-}
 
 /* --- Навігація по вкладках (Tabs) --- */
 .nav-tabs {
   border-bottom: 1px solid var(--nav-tabs-border-color);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem; /* Збільшено відступ */
 }
 .nav-tabs .nav-link {
   color: var(--nav-tabs-link-color);
-  background-color: transparent;
-  border: 1px solid transparent; /* Початково всі рамки прозорі */
-  border-bottom-width: 0; /* Немає нижньої рамки для неактивних */
-  margin-bottom: -1px; /* Щоб активна вкладка перекривала загальну лінію .nav-tabs */
-  padding: 0.65rem 1.1rem; /* Трохи змінено падінги */
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent transparent var(--nav-tabs-border-color) transparent;
+  margin-bottom: -1px;
+  padding: 0.75rem 1.25rem; /* Збільшено падінги для кращого вигляду */
   border-top-left-radius: 0.375rem;
   border-top-right-radius: 0.375rem;
   transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
@@ -562,22 +517,18 @@ body.dark-theme .badge.bg-warning.text-dark {
 }
 .nav-tabs .nav-link:hover,
 .nav-tabs .nav-link:focus {
+  border-color: var(--nav-tabs-link-hover-border-color)
+    var(--nav-tabs-link-hover-border-color) var(--nav-tabs-border-color); /* Рамка при наведенні тепер чіткіша */
   color: var(--nav-tabs-link-hover-color);
-  background-color: var(--nav-tabs-link-hover-bg); /* Фон при наведенні */
-  border-color: var(--nav-tabs-border-color) var(--nav-tabs-border-color)
-    var(--nav-tabs-border-color) var(--nav-tabs-border-color); /* Тонка рамка навколо */
-  border-bottom-color: var(
-    --nav-tabs-link-hover-bg
-  ); /* Нижня межа зливається з фоном */
+  background-color: var(--card-header-bg); /* Легкий фон при наведенні */
+  isolation: isolate;
 }
 .nav-tabs .nav-link.active {
   color: var(--nav-tabs-link-active-color) !important;
-  background-color: var(
-    --nav-tabs-link-active-bg
-  ) !important; /* Фон активної вкладки */
-  border-color: var(--nav-tabs-link-active-border-color)
-    var(--nav-tabs-link-active-border-color) var(--nav-tabs-link-active-bg) !important; /* Рамки зверху, зліва, справа. Нижня - колір фону вкладки */
-  font-weight: 500; /* Трохи жирніше */
+  background-color: var(--nav-tabs-link-active-bg) !important;
+  border-color: var(--nav-tabs-link-active-border-color) !important;
+  border-bottom-color: var(--nav-tabs-link-active-bg) !important;
+  font-weight: 600; /* Активна вкладка жирніша */
 }
 
 /* --- Перемикач теми --- */
@@ -665,64 +616,6 @@ input:checked + .slider:before {
 
 /* --- Утиліти --- */
 .sticky-top {
-  z-index: 1010;
-}
-
-/* Іконки */
-.fas,
-.fab {
-  transition: color 0.2s ease-in-out; /* Плавна зміна кольору іконок */
-}
-
-/* Додаткове виправлення для тексту в card-body, якщо він все ще темний */
-.card-body,
-.card-body p,
-.card-body h1,
-.card-body h2,
-.card-body h3,
-.card-body h4,
-.card-body h5,
-.card-body h6,
-.card-body strong,
-.card-body label,
-.card-body div,
-.card-body span,
-.card-body small {
-  color: var(
-    --text-color
-  ) !important; /* !important для гарантії перевизначення */
-}
-.card-body .text-muted {
-  /* Окремо для muted тексту всередині карток */
-  color: var(--text-muted-color) !important;
-}
-
-/* Виправлення для заголовків карток, якщо вони не успадковують колір */
-.card-header,
-.card-header > * {
-  color: var(--card-header-color) !important;
-}
-.card-header.bg-primary,
-.card-header.bg-primary > * {
-  color: var(--btn-primary-text) !important;
-}
-.card-header.bg-success,
-.card-header.bg-success > * {
-  color: var(--alert-success-color) !important;
-}
-.card-header.bg-danger,
-.card-header.bg-danger > * {
-  color: var(--alert-danger-color) !important;
-}
-.card-header.bg-warning,
-.card-header.bg-warning > * {
-  color: var(--alert-warning-color) !important;
-}
-.card-header.bg-dark,
-.card-header.bg-dark > * {
-  color: white !important;
-}
-body.dark-theme .card-header.bg-dark,
-body.dark-theme .card-header.bg-dark > * {
-  color: #f8f9fa !important;
+  /* Для .sticky-top, якщо використовується, переконайтеся, що z-index правильний */
+  z-index: 1010; /* Менше ніж navbar, але більше ніж звичайний контент */
 }

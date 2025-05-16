@@ -1,0 +1,41 @@
+<%- include('partials/header') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0"><i class="fas fa-plus-circle me-2"></i>Додати нового бота</h2>
+            </div>
+            <div class="card-body">
+                <% if (messages && messages.error && messages.error.length > 0) { %>
+                    <div class="alert alert-danger" role="alert">
+                        <%= messages.error %>
+                    </div>
+                <% } %>
+
+                <form action="/bots/add" method="POST">
+                    <div class="mb-3">
+                        <label for="token" class="form-label"><strong>1. Telegram Bot Token:</strong></label>
+                        <input type="text" class="form-control" id="token" name="token" value="<%= locals.token || '' %>" required placeholder="123456:ABC-DEF1234...">
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusCheckCommand" class="form-label"><strong>2. Команда для перевірки статусу бота:</strong></label>
+                        <input type="text" class="form-control" id="statusCheckCommand" name="statusCheckCommand" value="<%= locals.statusCheckCommand || '' %>" required placeholder="/status_check">
+                         <div class="form-text">Наприклад: <code>/status_check</code>, <code>/ping</code>. Це команда, яку ви надсилатимете боту в Telegram.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="filePathDisplay" class="form-label"><strong>3. Файл бота (генерується автоматично):</strong></label>
+                        <input type="text" class="form-control" id="filePathDisplay" name="filePathDisplay" value="app/bot-унікальний_id.js" readonly disabled>
+                        <div class="form-text">Ім'я файлу буде згенеровано автоматично при створенні бота.</div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/" class="btn btn-outline-secondary me-md-2"><i class="fas fa-arrow-left me-1"></i>Назад до списку</a>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Додати бота</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,79 @@
+<%- include('partials/header') %>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-success text-white">
+         <h3 class="card-title mb-0"><i class="fas fa-terminal me-2"></i>Додати нову команду для <%= bot.botId %></h3>
+    </div>
+    <div class="card-body">
+        <% if (messages && messages.command_success && messages.command_success.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <%= messages.command_success %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+        <% if (messages && messages.command_error && messages.command_error.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <%= messages.command_error %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <form action="/bots/add-command/<%= bot._id %>" method="POST">
+            <div class="mb-3">
+                <label for="newCommandName" class="form-label"><strong>Назва команди (без `/`):</strong></label>
+                <input type="text" class="form-control" id="newCommandName" name="newCommandName" required placeholder="наприклад, greet або my_info" value="<%= locals.newCommandName || '' %>">
+                <div class="form-text">Введіть назву команди. Знак `/` буде додано автоматично (напр., `/greet`). Використовуйте літери, цифри та підкреслення.</div>
+            </div>
+            <div class="mb-3">
+                <label for="actionCode" class="form-label"><strong>Дія команди (JavaScript код):</strong></label>
+                <textarea class="form-control code-textarea" id="actionCode" name="actionCode" rows="8" required placeholder="bot.sendMessage(chatId, 'Привіт!');"><%= locals.actionCode || '' %></textarea>
+                <div class="form-text">
+                    Цей код буде виконано, коли користувач надішле команду.
+                    Доступні змінні: <code>msg</code> (об'єкт повідомлення), <code>chatId</code> (ID чату), <code>match</code> (результат RegExp, якщо команда з параметрами).
+                    <br><strong>Приклад:</strong> <code>bot.sendMessage(chatId, `Ваш ID: ${msg.from.id}`);</code>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success"><i class="fas fa-plus-circle me-1"></i>Додати команду до файлу</button>
+        </form>
+    </div>
+</div>
+
+
+<div class="card shadow-sm">
+    <div class="card-header bg-warning text-dark">
+         <h3 class="card-title mb-0"><i class="fas fa-edit me-2"></i>Повне редагування файлу: <%= bot.botId %> (<code><%= bot.filePath %></code>)</h3>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>ПОПЕРЕДЖЕННЯ ПРО БЕЗПЕКУ!</h4>
+            <p>Ви збираєтеся редагувати файл JavaScript на сервері. Будь-які зміни можуть вплинути на роботу бота або, у разі помилки, призвести до збою. Неправильний код може створити ризики для безпеки. <strong>Редагуйте з обережністю!</strong></p>
+            <p class="mb-0">Також, будь ласка, не видаляйте та не змінюйте рядок-маркер: <code>// MARKER_FOR_NEW_COMMANDS (Не видаляйте і не змінюйте цей рядок!)</code>, якщо плануєте додавати команди через форму вище.</p>
+        </div>
+
+        <% if (messages && messages.file_edit_success && messages.file_edit_success.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <%= messages.file_edit_success %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+        <% if (messages && messages.file_edit_error && messages.file_edit_error.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <%= messages.file_edit_error %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <form action="/bots/edit-file/<%= bot._id %>" method="POST">
+            <div class="mb-3">
+                <label for="fileContent" class="form-label"><strong>Вміст файлу <code><%= bot.filePath %></code>:</strong></label>
+                <textarea id="fileContent" name="fileContent" rows="25" class="form-control code-textarea"><%= fileContent %></textarea>
+                <div class="form-text mt-1">Переконайтеся, що синтаксис JavaScript правильний.</div>
+            </div>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                 <a href="/" class="btn btn-outline-secondary me-md-2"><i class="fas fa-arrow-left me-1"></i>Назад до списку</a>
+                <button type="submit" class="btn btn-warning text-dark"><i class="fas fa-save me-1"></i>Зберегти весь файл та перезапустити</button>
+            </div>
+        </form>
+    </div>
+</div>
+<%- include('partials/footer') %>

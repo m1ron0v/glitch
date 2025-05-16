@@ -1,0 +1,84 @@
+<%- include('partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0"><i class="fas fa-cogs me-2"></i>Список ботів (<%= bots.length %>)</h2>
+    <a href="/bots/add" class="btn btn-success"><i class="fas fa-plus me-1"></i>Додати нового бота</a>
+</div>
+
+<% if (locals.messages && typeof locals.messages.success === 'string' && locals.messages.success.trim() !== '') { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= locals.messages.success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+<% if (locals.messages && typeof locals.messages.error === 'string' && locals.messages.error.trim() !== '') { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= locals.messages.error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+
+<% if (bots.length === 0) { %>
+    <div class="alert alert-info text-center" role="alert">
+        <h4 class="alert-heading"><i class="fas fa-info-circle me-2"></i>У вас ще немає ботів!</h4>
+        <p>Додайте свого першого Telegram-бота, щоб почати керування.</p>
+        <hr>
+        <a href="/bots/add" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Додати першого бота</a>
+    </div>
+<% } else { %>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <% bots.forEach(function(bot) { %>
+            <div class="col">
+                <div class="card h-100 shadow-sm bot-card">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-robot me-2"></i>ID: <%= bot.botId %></h5>
+                        <% if (bot.pinnedError) { %>
+                           <i class="fas fa-exclamation-triangle text-danger" title="Є закріплена помилка! Перегляньте логи."></i>
+                        <% } %>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <%
+                              let statusClass = '';
+                              let statusTextDB = bot.status;
+                              let statusIcon = 'fas fa-question-circle';
+
+                              if (bot.status === 'running') { statusClass = 'bg-success'; statusTextDB = 'Працює'; statusIcon = 'fas fa-check-circle';}
+                              else if (bot.status === 'stopped') { statusClass = 'bg-secondary'; statusTextDB = 'Зупинено'; statusIcon = 'fas fa-stop-circle';}
+                              else if (bot.status === 'error') { statusClass = 'bg-danger'; statusTextDB = 'Помилка'; statusIcon = 'fas fa-exclamation-triangle';}
+                              else if (bot.status === 'starting') { statusClass = 'bg-info text-dark'; statusTextDB = 'Запускається'; statusIcon = 'fas fa-play-circle';}
+                              else { statusClass = 'bg-light text-dark'; }
+                            %>
+                            <strong>Стан в БД:</strong> <span class="badge <%= statusClass %>"><i class="<%= statusIcon %> me-1"></i><%= statusTextDB %></span>
+                        </p>
+                        <p class="card-text" id="status-text-<%= bot.botId %>">
+                            <strong>Статус процесу:</strong> <span class="badge bg-secondary" id="status-badge-<%= bot.botId %>">НЕВІДОМО</span>
+                        </p>
+                        <p class="card-text small text-muted"><strong>Токен:</strong> <%= bot.token.substring(0, 7) %>...</p>
+                        <p class="card-text small"><strong>Команда:</strong> <code><%= bot.statusCheckCommand %></code></p>
+                        <p class="card-text small"><strong>Файл:</strong> <code><%= bot.filePath %></code></p>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="btn-group w-100 mb-2" role="group" aria-label="Bot actions">
+                             <form action="/bots/restart/<%= bot._id %>" method="POST" class="d-inline-block flex-fill">
+                                <button type="submit" class="btn btn-sm btn-outline-success w-100"><i class="fas fa-sync-alt me-1"></i>Перезапуск</button>
+                            </form>
+                            <button class="btn btn-sm btn-outline-info w-100 flex-fill" onclick="getBotProcessStatus('<%= bot._id %>', '<%= bot.botId %>')"><i class="fas fa-question-circle me-1"></i>Статус</button>
+                        </div>
+                        <div class="btn-group w-100 mb-2" role="group">
+                             <a href="/bots/edit-file/<%= bot._id %>" class="btn btn-sm btn-outline-warning w-100 flex-fill"><i class="fas fa-edit me-1"></i>Редагувати</a>
+                             <form action="/bots/delete/<%= bot._id %>" method="POST" class="d-inline-block flex-fill">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100" onclick="return confirm('Ви впевнені, що хочете видалити бота <%= bot.botId %>?');"><i class="fas fa-trash-alt me-1"></i>Видалити</button>
+                            </form>
+                        </div>
+                        <div class="btn-group w-100" role="group">
+                             <a href="/bots/<%= bot._id %>/logs" class="btn btn-sm btn-outline-dark w-100 flex-fill"><i class="fas fa-file-alt me-1"></i>Логи</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+<% } %>
+
+<%- include('partials/footer') %>

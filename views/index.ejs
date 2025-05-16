@@ -29,11 +29,10 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         <% bots.forEach(function(bot) { %>
             <div class="col">
-                <div class="card h-100 shadow-sm bot-card">
-                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <div class="card h-100 shadow-sm bot-card" id="bot-card-<%= bot.botId %>"> <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0"><i class="fas fa-robot me-2"></i>ID: <%= bot.botId %></h5>
                         <% if (bot.pinnedError) { %>
-                           <i class="fas fa-exclamation-triangle text-danger" title="Є закріплена помилка! Перегляньте логи."></i>
+                           <i class="fas fa-exclamation-triangle text-danger" title="Є закріплена помилка! Перегляньте логи: <%= bot.pinnedError %>"></i>
                         <% } %>
                     </div>
                     <div class="card-body">
@@ -51,23 +50,38 @@
                             %>
                             <strong>Стан в БД:</strong> <span class="badge <%= statusClass %>"><i class="<%= statusIcon %> me-1"></i><%= statusTextDB %></span>
                         </p>
-                        <p class="card-text" id="status-text-<%= bot.botId %>">
+                        <p class="card-text" id="status-text-<%= bot.botId %>"> 
                             <strong>Статус процесу:</strong> <span class="badge bg-secondary" id="status-badge-<%= bot.botId %>">НЕВІДОМО</span>
                         </p>
                         <p class="card-text small text-muted"><strong>Токен:</strong> <%= bot.token.substring(0, 7) %>...</p>
-                        <p class="card-text small"><strong>Команда:</strong> <code><%= bot.statusCheckCommand %></code></p>
+                        
+                        <p class="card-text small">
+                            <strong>Команди:</strong>
+                            <% if (bot.displayedCommands && bot.displayedCommands.length > 0) { %>
+                                <% bot.displayedCommands.forEach(function(cmd, index) { %>
+                                    <code><%= cmd %></code><%= (index < bot.displayedCommands.length - 1) ? ', ' : '' %>
+                                <% }); %>
+                            <% } else { %>
+                                <span>Немає визначених команд</span>
+                            <% } %>
+                        </p>
                         <p class="card-text small"><strong>Файл:</strong> <code><%= bot.filePath %></code></p>
+                         <% if (bot.lastMessage) { %>
+                            <p class="card-text small text-muted mt-2 fst-italic" title="Останнє повідомлення/помилка з БД">
+                                <i class="fas fa-info-circle"></i> <%= bot.lastMessage.substring(0, 100) %><% if (bot.lastMessage.length > 100) { %>...<% } %>
+                            </p>
+                        <% } %>
                     </div>
                     <div class="card-footer bg-light">
                         <div class="btn-group w-100 mb-2" role="group" aria-label="Bot actions">
-                             <form action="/bots/restart/<%= bot._id %>" method="POST" class="d-inline-block flex-fill">
+                             <form action="/bots/restart/<%= bot._id %>" method="POST" class="d-inline-block flex-fill me-1">
                                 <button type="submit" class="btn btn-sm btn-outline-success w-100"><i class="fas fa-sync-alt me-1"></i>Перезапуск</button>
                             </form>
-                            <button class="btn btn-sm btn-outline-info w-100 flex-fill" onclick="getBotProcessStatus('<%= bot._id %>', '<%= bot.botId %>')"><i class="fas fa-question-circle me-1"></i>Статус</button>
+                            <button class="btn btn-sm btn-outline-info w-100 flex-fill ms-1" onclick="getBotProcessStatus('<%= bot._id %>', '<%= bot.botId %>')"><i class="fas fa-question-circle me-1"></i>Статус</button>
                         </div>
                         <div class="btn-group w-100 mb-2" role="group">
-                             <a href="/bots/edit-file/<%= bot._id %>" class="btn btn-sm btn-outline-warning w-100 flex-fill"><i class="fas fa-edit me-1"></i>Редагувати</a>
-                             <form action="/bots/delete/<%= bot._id %>" method="POST" class="d-inline-block flex-fill">
+                             <a href="/bots/edit-file/<%= bot._id %>" class="btn btn-sm btn-outline-warning w-100 flex-fill me-1"><i class="fas fa-edit me-1"></i>Код</a>
+                             <form action="/bots/delete/<%= bot._id %>" method="POST" class="d-inline-block flex-fill ms-1">
                                 <button type="submit" class="btn btn-sm btn-outline-danger w-100" onclick="return confirm('Ви впевнені, що хочете видалити бота <%= bot.botId %>?');"><i class="fas fa-trash-alt me-1"></i>Видалити</button>
                             </form>
                         </div>

@@ -1,0 +1,31 @@
+    </div> <footer>
+        <p>&copy; <%= new Date().getFullYear() %> Мій Додаток. Glitch.</p>
+    </footer>
+    <script>
+        // Простий скрипт для кнопки "Отримати статус" (приклад)
+        async function getBotProcessStatus(dbId, botInternalId) {
+            try {
+                const response = await fetch(`/bots/process-status/${dbId}`);
+                const data = await response.json();
+                const statusElement = document.getElementById(`status-text-${botInternalId}`);
+                const indicatorElement = document.getElementById(`status-indicator-${botInternalId}`);
+                
+                if (statusElement) statusElement.textContent = `Статус процесу: ${data.status} (${data.message || ''})`;
+                
+                if (indicatorElement) {
+                    indicatorElement.className = 'status-indicator'; // Reset classes
+                    if (data.status === 'running') indicatorElement.classList.add('status-running');
+                    else if (data.status === 'stopped') indicatorElement.classList.add('status-stopped');
+                    else if (data.status === 'error') indicatorElement.classList.add('status-error');
+                    else if (data.status === 'starting') indicatorElement.classList.add('status-starting');
+                }
+                // alert(`Статус процесу для ${botInternalId}: ${data.status}. Деталі: ${data.message || 'N/A'}`);
+            } catch (error) {
+                console.error('Error fetching bot process status:', error);
+                const statusElement = document.getElementById(`status-text-${botInternalId}`);
+                if (statusElement) statusElement.textContent = 'Помилка отримання статусу процесу';
+            }
+        }
+    </script>
+</body>
+</html>

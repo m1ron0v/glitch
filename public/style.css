@@ -1,21 +1,282 @@
 /* public/style.css */
+
+/* :root визначає змінні для світлої теми (за замовчуванням) */
+:root {
+  --body-bg: #eef1f5;
+  --text-color: #2c3e50;
+  --text-muted-color: #6c757d;
+  --link-color: #007bff;
+  --link-hover-color: #0056b3;
+
+  --card-bg: #ffffff;
+  --card-header-bg: #f8f9fc;
+  --card-header-color: #212529;
+  --card-footer-bg: #f8f9fc;
+  --card-border-color: rgba(0, 0, 0, 0.125);
+
+  --navbar-bg: #343a40;
+  --navbar-color: rgba(255, 255, 255, 0.8);
+  --navbar-brand-color: #ffffff;
+  --nav-link-hover-bg: rgba(255, 255, 255, 0.1);
+  --nav-link-active-color: #ffffff;
+
+  --footer-bg: #2c3e50;
+  --footer-color: rgba(255, 255, 255, 0.8);
+  --footer-link-color: rgba(255, 255, 255, 0.9);
+  --footer-link-hover-color: #1abc9c;
+
+  --btn-primary-bg: #007bff;
+  --btn-primary-border: #007bff;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover-bg: #0069d9;
+  --btn-primary-hover-border: #0062cc;
+
+  --btn-outline-secondary-color: #6c757d;
+  --btn-outline-secondary-border: #6c757d;
+  --btn-outline-secondary-hover-color: #fff;
+  --btn-outline-secondary-hover-bg: #6c757d;
+  --btn-outline-secondary-hover-border: #6c757d;
+
+  --code-bg: #e9ecef;
+  --code-text-color: #c7254e;
+
+  --code-textarea-bg: #263238;
+  --code-textarea-color: #eeffff;
+  --code-textarea-border: #455a64;
+
+  --log-output-bg: #1e1e1e;
+  --log-output-color: #d4d4d4;
+
+  --alert-danger-bg: #f8d7da;
+  --alert-danger-color: #721c24;
+  --alert-danger-border: #f5c2c7;
+  --alert-success-bg: #d4edda;
+  --alert-success-color: #155724;
+  --alert-success-border: #c3e6cb;
+  --alert-info-bg: #d1ecf1;
+  --alert-info-color: #0c5460;
+  --alert-info-border: #bee5eb;
+  --alert-warning-bg: #fff3cd;
+  --alert-warning-color: #856404;
+  --alert-warning-border: #ffeeba;
+
+  --input-bg: #ffffff;
+  --input-color: #212529;
+  --input-border-color: #ced4da;
+  --input-disabled-bg: #e9ecef;
+  --input-disabled-color: #495057;
+  --input-disabled-border-color: #ced4da;
+  --input-focus-border-color: #86b7fe;
+  --input-focus-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+
+  /* Зміни для вкладок у світлій темі */
+  --nav-tabs-border-color: #dee2e6; /* Загальна нижня лінія вкладок */
+  --nav-tabs-link-color: #495057; /* Колір тексту неактивних вкладок (темно-сірий) */
+  --nav-tabs-link-hover-bg: #e9ecef; /* Фон неактивної вкладки при наведенні */
+  --nav-tabs-link-hover-color: #0056b3; /* Колір тексту неактивної вкладки при наведенні */
+  --nav-tabs-link-hover-border-color: #ddd #ddd var(--nav-tabs-border-color); /* Рамка при наведенні */
+
+  --nav-tabs-link-active-color: var(
+    --link-color
+  ); /* Колір тексту активної вкладки (основний колір посилань) */
+  --nav-tabs-link-active-bg: var(
+    --card-bg
+  ); /* Фон активної вкладки (як фон картки або тіла сторінки) */
+  --nav-tabs-link-active-border-color: var(
+    --nav-tabs-border-color
+  ); /* Колір рамки активної */
+
+  --pre-bg: #f8f9fa;
+  --pre-text-color: var(--text-color);
+  --pre-border-color: var(--card-border-color);
+}
+
+/* --- Темна тема --- */
+html.dark-theme-preload :root {
+  --body-bg: #121212;
+  --text-color: #e4e6eb;
+}
+body.dark-theme {
+  --body-bg: #121212;
+  --text-color: #e4e6eb;
+  --text-muted-color: #a8b3cf;
+  --link-color: #79c0ff;
+  --link-hover-color: #a1d1ff;
+
+  --card-bg: #1e1e1e;
+  --card-header-bg: #2a2a2a;
+  --card-header-color: #f0f2f5;
+  --card-footer-bg: #2a2a2a;
+  --card-border-color: #3a3b3c;
+
+  --navbar-bg: #1c1c1c;
+  --navbar-color: rgba(255, 255, 255, 0.8);
+  --navbar-brand-color: #ffffff;
+  --nav-link-hover-bg: rgba(255, 255, 255, 0.1);
+  --nav-link-active-color: #ffffff;
+
+  --footer-bg: #1c1c1c;
+  --footer-color: rgba(255, 255, 255, 0.8);
+  --footer-link-color: rgba(255, 255, 255, 0.9);
+  --footer-link-hover-color: #20c997;
+
+  --btn-primary-bg: #2579fc;
+  --btn-primary-border: #2579fc;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover-bg: #1a6ef2;
+  --btn-primary-hover-border: #1862e0;
+
+  --btn-outline-secondary-color: #adb5bd;
+  --btn-outline-secondary-border: #555a60;
+  --btn-outline-secondary-hover-color: #121212;
+  --btn-outline-secondary-hover-bg: #adb5bd;
+  --btn-outline-secondary-hover-border: #adb5bd;
+
+  --code-bg: #2a2a2a;
+  --code-text-color: #d1d5db;
+
+  --alert-danger-bg: #422024;
+  --alert-danger-color: #f5c6cb;
+  --alert-danger-border: #5c2e36;
+  --alert-success-bg: #153220;
+  --alert-success-color: #c3e6cb;
+  --alert-success-border: #1f4a2f;
+  --alert-info-bg: #0c3c4c;
+  --alert-info-color: #bee5eb;
+  --alert-info-border: #11526b;
+  --alert-warning-bg: #4d3803;
+  --alert-warning-color: #ffeeba;
+  --alert-warning-border: #664d03;
+
+  --input-bg: #2a2a2a;
+  --input-color: #e4e6eb;
+  --input-border-color: #44474a;
+  --input-disabled-bg: #313437;
+  --input-disabled-color: #9098a1;
+  --input-disabled-border-color: #44474a;
+  --input-focus-border-color: #2579fc;
+  --input-focus-box-shadow: 0 0 0 0.25rem rgba(37, 121, 252, 0.4);
+
+  /* Зміни для вкладок у темній темі */
+  --nav-tabs-border-color: #3a3b3c;
+  --nav-tabs-link-color: #a8b3cf;
+  --nav-tabs-link-hover-bg: #313437;
+  --nav-tabs-link-hover-color: var(--link-hover-color);
+  --nav-tabs-link-hover-border-color: #44474a #44474a
+    var(--nav-tabs-border-color);
+
+  --nav-tabs-link-active-color: var(--link-color);
+  --nav-tabs-link-active-bg: var(--card-bg);
+  --nav-tabs-link-active-border-color: var(--nav-tabs-border-color);
+
+  --pre-bg: #2a2a2a;
+  --pre-text-color: var(--text-color);
+  --pre-border-color: var(--card-border-color);
+}
+
+/* --- Базові стилі --- */
 body {
-  padding-top: 80px;
+  padding-top: 70px;
   padding-bottom: 80px;
-  background-color: #eef1f5;
-  color: #2c3e50;
+  background-color: var(--body-bg);
+  color: var(--text-color);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
-/* --- Загальні анімації --- */
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--link-hover-color);
+  text-decoration: underline;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-color);
+}
+
+/* --- Навігаційна панель --- */
+.navbar {
+  background-color: var(--navbar-bg) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease-in-out;
+}
+.navbar-brand {
+  color: var(--navbar-brand-color) !important;
+  font-weight: 600;
+  font-size: 1.3rem;
+}
+.nav-link {
+  color: var(--navbar-color) !important;
+  transition: color 0.2s ease-in-out, transform 0.15s ease-in-out,
+    background-color 0.15s ease-in-out;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0.375rem;
+  margin: 0 0.15rem;
+}
+.nav-link:hover,
+.nav-link.active {
+  color: var(--nav-link-active-color) !important;
+  transform: translateY(-1px);
+  background-color: var(--nav-link-hover-bg);
+}
+body.dark-theme .navbar-toggler-icon {
+  filter: invert(0.8) brightness(1.5);
+}
+
+/* --- Футер --- */
+.footer {
+  background-color: var(--footer-bg);
+  color: var(--footer-color);
+  padding: 1.25rem 0;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  font-size: 0.875rem;
+  z-index: 1020;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+.footer .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+@media (max-width: 576px) {
+  .footer .container {
+    justify-content: center;
+  }
+}
+.footer a {
+  color: var(--footer-link-color);
+}
+.footer a:hover {
+  color: var(--footer-link-hover-color);
+}
+
+/* --- Контейнер та картки --- */
+.main-content-area {
+  padding-left: 15px;
+  padding-right: 15px;
+  width: 100%;
+  animation: fadeIn 0.4s ease-out forwards;
+}
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(15px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -23,301 +284,445 @@ body {
   }
 }
 
-@keyframes subtlePulse {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.3); }
-  70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
-}
-
-
-/* --- Навігаційна панель --- */
-.navbar {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: background-color 0.3s ease;
-}
-
-.navbar-brand {
-  font-weight: 700;
-  font-size: 1.4rem;
-}
-
-.nav-link {
-  transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
-  padding: 0.8rem 1rem !important;
+.card,
+.bot-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border-color);
   border-radius: 0.5rem;
-  margin: 0 0.2rem;
-}
-.nav-link:hover, .nav-link.active {
-  color: #fff !important;
-  transform: translateY(-2px);
-  background-color: rgba(255,255,255,0.1);
-}
-
-
-/* --- Футер --- */
-.footer {
-  background-color: #2c3e50;
-  color: rgba(255, 255, 255, 0.75);
-  padding: 1.5rem 0;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  text-align: center;
-  font-size: 0.9rem;
-  z-index: 1020;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
-}
-.footer a {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-.footer a:hover {
-  color: #1abc9c;
-  text-decoration: none;
-}
-
-/* --- Контейнер для основного контенту --- */
-.container { /* Стандартний Bootstrap контейнер, якщо потрібен десь для центрування */
-  max-width: 1280px; 
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.main-content-area { /* Для сторінок, що мають займати майже всю ширину */
-  padding-left: 10px;
-  padding-right: 10px;
-  width: 100%; 
-  animation: fadeIn 0.6s ease-out forwards;
-}
-
-
-/* --- Картки (загальні стилі для .card та .bot-card) --- */
-.card, .bot-card {
-  border: none;
-  border-radius: 1rem;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease-in-out;
   overflow: hidden;
+  margin-bottom: 1.5rem;
 }
-.card:hover, .bot-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1), 0 5px 12px rgba(0, 0, 0, 0.08);
+.card:hover,
+.bot-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
 }
-
 .card-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  font-weight: 600;
-  padding: 1rem 1.25rem;
+  background-color: var(--card-header-bg);
+  color: var(--card-header-color);
+  border-bottom: 1px solid var(--card-border-color);
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease-in-out;
 }
-.card-header.bg-primary { background-color: #007bff !important; color: white; }
-.card-header.bg-success { background-color: #28a745 !important; color: white; }
-.card-header.bg-warning { background-color: #ffc107 !important; color: #212529; }
-.card-header.bg-dark { background-color: #343a40 !important; color: white; }
+.card-header.bg-primary {
+  background-color: var(--btn-primary-bg) !important;
+  color: var(--btn-primary-text) !important;
+}
+.card-header.bg-success {
+  background-color: var(--alert-success-bg) !important;
+  color: var(--alert-success-color) !important;
+  border-bottom-color: var(--alert-success-border) !important;
+}
+.card-header.bg-danger {
+  background-color: var(--alert-danger-bg) !important;
+  color: var(--alert-danger-color) !important;
+  border-bottom-color: var(--alert-danger-border) !important;
+}
+.card-header.bg-warning {
+  background-color: var(--alert-warning-bg) !important;
+  color: var(--alert-warning-color) !important;
+  border-bottom-color: var(--alert-warning-border) !important;
+}
+.card-header.bg-dark {
+  background-color: #343a40 !important;
+  color: white !important;
+}
+body.dark-theme .card-header.bg-dark {
+  background-color: #212529 !important;
+  color: #f8f9fa !important;
+}
 
+.card-body {
+  padding: 1rem;
+  color: var(--text-color);
+}
+.card-body p,
+.card-body h5,
+.card-body strong,
+.card-body div {
+  color: var(
+    --text-color
+  ); /* Застосовуємо до всіх текстових елементів всередині card-body */
+}
+.card-body .text-muted {
+  /* Окремо для muted тексту всередині карток */
+  color: var(--text-muted-color) !important;
+}
 
 .card-footer {
-  background-color: #f8f9fc;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  padding: 1rem 1.25rem;
+  background-color: var(--card-footer-bg);
+  border-top: 1px solid var(--card-border-color);
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease-in-out;
 }
 
-.bot-card .card-body p.card-text code,
-.form-text code 
-{
-  background-color: #e9ecef;
-  padding: 0.25em 0.5em;
-  border-radius: 0.375rem;
-  font-size: 88%;
-}
-
-/* --- Стиль для textarea з кодом --- */
-.code-textarea {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-  background-color: #263238;
-  color: #EEFFFF;
-  border: 1px solid #455A64;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  line-height: 1.7;
-  font-size: 0.9em;
-  min-height: 350px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-.code-textarea:focus {
-  border-color: #17a2b8;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
-}
-
-/* --- Кнопки --- */
-.btn {
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.2rem;
+/* --- Форми --- */
+.form-label {
   font-weight: 500;
-  transition: all 0.25s ease-in-out;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  border: 1px solid transparent;
+  margin-bottom: 0.3rem;
+  color: var(--text-color);
 }
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.form-control,
+.form-select {
+  background-color: var(--input-bg);
+  color: var(--input-color);
+  border: 1px solid var(--input-border-color);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease-in-out;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
 }
-.btn:active {
-  transform: translateY(0px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--input-focus-border-color);
+  box-shadow: var(--input-focus-box-shadow);
+  background-color: var(--input-bg);
+  color: var(--input-color);
 }
-.btn-primary { background-color: #007bff; border-color: #007bff; }
-.btn-primary:hover { background-color: #0069d9; border-color: #0062cc; }
-.btn-success { background-color: #28a745; border-color: #28a745; }
-.btn-success:hover { background-color: #218838; border-color: #1e7e34; }
-.btn-danger { background-color: #dc3545; border-color: #dc3545; }
-.btn-danger:hover { background-color: #c82333; border-color: #bd2130; }
-.btn-warning { color: #212529; background-color: #ffc107; border-color: #ffc107; }
-.btn-warning:hover { color: #212529; background-color: #e0a800; border-color: #d39e00; }
-.btn-info { background-color: #17a2b8; border-color: #17a2b8; }
-.btn-info:hover { background-color: #138496; border-color: #117a8b; }
-.btn-outline-secondary:hover { background-color: #6c757d; color: white; }
+.form-control:disabled,
+.form-control[readonly],
+.form-select:disabled,
+.form-select[readonly] {
+  background-color: var(--input-disabled-bg) !important;
+  color: var(--input-disabled-color) !important;
+  border-color: var(--input-disabled-border-color) !important;
+  opacity: 0.7;
+}
+.form-text {
+  color: var(--text-muted-color);
+  font-size: 0.85em;
+}
+.form-text code {
+  background-color: var(--code-bg);
+  color: var(--code-text-color);
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+}
 
-.bot-card .card-footer .btn,
-.bot-card .card-footer a.btn {
-    padding-top: 0.6rem;
-    padding-bottom: 0.6rem;
+/* --- Код та Логи --- */
+.code-textarea {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+    monospace;
+  background-color: var(--code-textarea-bg) !important;
+  color: var(--code-textarea-color) !important;
+  border: 1px solid var(--code-textarea-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  line-height: 1.5;
+  font-size: 0.9em;
+  min-height: 200px;
 }
-
-/* --- Форми та поля вводу --- */
-.form-control {
-  border-radius: 0.75rem;
-  padding: 0.6rem 1rem;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.075);
-  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+#logContentOutput {
+  background-color: var(--log-output-bg) !important;
+  color: var(--log-output-color) !important;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  max-height: 60vh;
+  font-size: 0.85em;
 }
-.form-control:focus {
-  border-color: #007bff;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.075), 0 0 0 0.2rem rgba(0,123,255,.25);
-}
-.form-label strong {
-  font-weight: 600;
+pre {
+  background-color: var(--pre-bg);
+  color: var(--pre-text-color);
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--pre-border-color);
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 0.85em;
 }
 
 /* --- Повідомлення (Alerts) --- */
 .alert {
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  animation: fadeIn 0.5s ease-out forwards;
+  border-radius: 0.375rem;
+  padding: 0.9rem 1.15rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+  animation: fadeIn 0.3s ease-out forwards;
 }
 .alert-dismissible .btn-close {
-  padding: 1.35rem 1.35rem;
-  transition: transform 0.2s ease;
+  padding: 1rem 1rem;
 }
-.alert-dismissible .btn-close:hover {
-    transform: scale(1.1);
+.alert-danger {
+  background-color: var(--alert-danger-bg);
+  color: var(--alert-danger-color);
+  border: 1px solid var(--alert-danger-border);
 }
-.alert-danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-.alert-success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
-.alert-warning { background-color: #fff3cd; border-color: #ffeeba; color: #856404; }
-.alert-info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+.alert-success {
+  background-color: var(--alert-success-bg);
+  color: var(--alert-success-color);
+  border: 1px solid var(--alert-success-border);
+}
+.alert-info {
+  background-color: var(--alert-info-bg);
+  color: var(--alert-info-color);
+  border: 1px solid var(--alert-info-border);
+}
+.alert-warning {
+  background-color: var(--alert-warning-bg);
+  color: var(--alert-warning-color);
+  border: 1px solid var(--alert-warning-border);
+}
 
+/* --- Кнопки --- */
+.btn {
+  border-radius: 0.375rem;
+  padding: 0.45rem 0.9rem;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  border-width: 1px;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+.btn:active {
+  transform: translateY(0px);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+.btn-primary {
+  background-color: var(--btn-primary-bg);
+  border-color: var(--btn-primary-border);
+  color: var(--btn-primary-text);
+}
+.btn-primary:hover {
+  background-color: var(--btn-primary-hover-bg);
+  border-color: var(--btn-primary-hover-border);
+}
+.btn-outline-secondary {
+  color: var(--btn-outline-secondary-color);
+  border-color: var(--btn-outline-secondary-border);
+}
+.btn-outline-secondary:hover {
+  color: var(--btn-outline-secondary-hover-color);
+  background-color: var(--btn-outline-secondary-hover-bg);
+  border-color: var(--btn-outline-secondary-hover-border);
+}
 
-/* --- Статуси (Badges) --- */
+/* --- Значки (Badges) --- */
 .badge {
-    padding: 0.5em 0.75em;
-    border-radius: 0.5rem;
-    font-size: 0.85em;
-    font-weight: 600;
-    transition: all 0.3s ease;
+  padding: 0.4em 0.6em;
+  border-radius: 0.3rem;
+  font-size: 0.8em;
+  font-weight: 600;
 }
-.badge:hover {
-    opacity: 0.85;
+/* Специфічні кольори для значків статусу, якщо потрібно */
+.badge.bg-success {
+  color: #fff !important;
+} /* Білий текст на зеленому */
+body.dark-theme .badge.bg-success {
+  color: #fff !important;
 }
-.badge.bg-success { animation: subtlePulse 2s infinite 1s ease-in-out; }
+.badge.bg-danger {
+  color: #fff !important;
+} /* Білий текст на червоному */
+body.dark-theme .badge.bg-danger {
+  color: #fff !important;
+}
+.badge.bg-info.text-dark {
+  color: #000 !important;
+} /* Чорний текст на світло-синьому */
+body.dark-theme .badge.bg-info.text-dark {
+  color: #fff !important;
+  background-color: var(--link-color) !important;
+} /* Світлий текст на синьому */
+.badge.bg-secondary {
+  color: #fff !important;
+}
+body.dark-theme .badge.bg-secondary {
+  color: var(--text-color) !important;
+  background-color: #44474a !important;
+}
+.badge.bg-warning.text-dark {
+  color: #000 !important;
+}
+body.dark-theme .badge.bg-warning.text-dark {
+  color: #000 !important;
+  background-color: #ffca2c !important;
+}
 
-#status-badge-loading { 
-  animation: pulse 1.5s infinite ease-in-out;
+/* --- Навігація по вкладках (Tabs) --- */
+.nav-tabs {
+  border-bottom: 1px solid var(--nav-tabs-border-color);
+  margin-bottom: 1.5rem;
 }
-@keyframes pulse { 
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+.nav-tabs .nav-link {
+  color: var(--nav-tabs-link-color);
+  background-color: transparent;
+  border: 1px solid transparent; /* Початково всі рамки прозорі */
+  border-bottom-width: 0; /* Немає нижньої рамки для неактивних */
+  margin-bottom: -1px; /* Щоб активна вкладка перекривала загальну лінію .nav-tabs */
+  padding: 0.65rem 1.1rem; /* Трохи змінено падінги */
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
+}
+.nav-tabs .nav-link:hover,
+.nav-tabs .nav-link:focus {
+  color: var(--nav-tabs-link-hover-color);
+  background-color: var(--nav-tabs-link-hover-bg); /* Фон при наведенні */
+  border-color: var(--nav-tabs-border-color) var(--nav-tabs-border-color)
+    var(--nav-tabs-border-color) var(--nav-tabs-border-color); /* Тонка рамка навколо */
+  border-bottom-color: var(
+    --nav-tabs-link-hover-bg
+  ); /* Нижня межа зливається з фоном */
+}
+.nav-tabs .nav-link.active {
+  color: var(--nav-tabs-link-active-color) !important;
+  background-color: var(
+    --nav-tabs-link-active-bg
+  ) !important; /* Фон активної вкладки */
+  border-color: var(--nav-tabs-link-active-border-color)
+    var(--nav-tabs-link-active-border-color) var(--nav-tabs-link-active-bg) !important; /* Рамки зверху, зліва, справа. Нижня - колір фону вкладки */
+  font-weight: 500; /* Трохи жирніше */
 }
 
+/* --- Перемикач теми --- */
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--footer-color);
+}
+.theme-switch {
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  width: 36px;
+}
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+}
+body.dark-theme .slider {
+  background-color: #555;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+}
+input:checked + .slider {
+  background-color: var(--link-color);
+}
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--link-color);
+}
+input:checked + .slider:before {
+  transform: translateX(16px);
+}
+.slider.round {
+  border-radius: 20px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
 
 /* --- Адаптивність --- */
 @media (max-width: 767.98px) {
   body {
-    padding-top: 70px;
+    padding-top: 60px;
+    padding-bottom: 100px;
   }
-  h2 { font-size: 1.6rem; }
-  .card, .bot-card { border-radius: 0.75rem; } 
-  .code-textarea { min-height: 280px; font-size: 0.85em; }
-  .bot-card .card-footer .btn,
-  .bot-card .card-footer a.btn {
-    font-size: 0.85rem;
-    padding: 0.5rem 0.6rem;
+  .card,
+  .bot-card {
+    border-radius: 0.375rem;
   }
-  .main-content-area { 
-      padding-left: 5px; 
-      padding-right: 5px; 
+  .code-textarea {
+    min-height: 180px;
+    font-size: 0.8em;
+  }
+  .footer .container {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .theme-switch-wrapper {
+    margin-top: 0.5rem;
   }
 }
 
-@media (max-width: 575.98px) {
-  .navbar-brand { font-size: 1.2rem; }
-  .footer { font-size: 0.85rem; }
-  .btn { padding: 0.5rem 1rem; font-size: 0.9rem; }
+/* --- Утиліти --- */
+.sticky-top {
+  z-index: 1010;
 }
 
-/* Стиль для іконок у кнопках (якщо потрібно глобально) */
-.btn i.fas, .btn i.fab {
-  margin-right: 0.4rem;
+/* Іконки */
+.fas,
+.fab {
+  transition: color 0.2s ease-in-out; /* Плавна зміна кольору іконок */
 }
 
-/* Спеціальний стиль для sticky pinned error на сторінці логів */
-#pinnedErrorContainer.sticky-top {
-    top: 75px; 
-    border-radius: 0.75rem; 
+/* Додаткове виправлення для тексту в card-body, якщо він все ще темний */
+.card-body,
+.card-body p,
+.card-body h1,
+.card-body h2,
+.card-body h3,
+.card-body h4,
+.card-body h5,
+.card-body h6,
+.card-body strong,
+.card-body label,
+.card-body div,
+.card-body span,
+.card-body small {
+  color: var(
+    --text-color
+  ) !important; /* !important для гарантії перевизначення */
+}
+.card-body .text-muted {
+  /* Окремо для muted тексту всередині карток */
+  color: var(--text-muted-color) !important;
 }
 
-/* --- Консоль команд на сторінці логів --- */
-#botConsoleCard .card-header {
-  font-weight: 600;
+/* Виправлення для заголовків карток, якщо вони не успадковують колір */
+.card-header,
+.card-header > * {
+  color: var(--card-header-color) !important;
 }
-
-#consoleFeedback {
-  font-size: 0.9em;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid transparent;
-  border-radius: 0.5rem;
-  background-color: #f8f9fa; 
-  margin-bottom: 1rem;
-  min-height: 2.5em; 
-  line-height: 1.5em;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  word-wrap: break-word;
+.card-header.bg-primary,
+.card-header.bg-primary > * {
+  color: var(--btn-primary-text) !important;
 }
-
-#consoleFeedback.error { /* Використовуємо ці класи для JS */
-  color: #721c24; 
-  background-color: #f8d7da; 
-  border-color: #f5c6cb; 
+.card-header.bg-success,
+.card-header.bg-success > * {
+  color: var(--alert-success-color) !important;
 }
-
-#consoleFeedback.success { /* Використовуємо ці класи для JS */
-  color: #155724; 
-  background-color: #d4edda; 
-  border-color: #c3e6cb; 
+.card-header.bg-danger,
+.card-header.bg-danger > * {
+  color: var(--alert-danger-color) !important;
 }
-
-#consoleInput { 
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-right: none; 
+.card-header.bg-warning,
+.card-header.bg-warning > * {
+  color: var(--alert-warning-color) !important;
 }
-#consoleInput:focus {
-    z-index: 3; 
+.card-header.bg-dark,
+.card-header.bg-dark > * {
+  color: white !important;
 }
-
-#sendConsoleCommandBtn { 
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+body.dark-theme .card-header.bg-dark,
+body.dark-theme .card-header.bg-dark > * {
+  color: #f8f9fa !important;
 }

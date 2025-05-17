@@ -1,72 +1,125 @@
-    </div> <footer class="footer">
-        <div class="container"> <span>&copy; <%= new Date().getFullYear() %> Мій Додаток. Glitch.</span>
+<%- /* views/partials/footer.ejs */ %>
+    </div> <%# Закриття .main-content-area або .container з header.ejs %>
+    
+    <footer class="footer">
+        <div class="container">
+            <span>&copy; <%= new Date().getFullYear() %> Менеджер Ботів.</span>
+            
+            <div class="theme-switch-wrapper">
+                <span id="theme-label" class="me-2">Світла тема</span>
+                <label class="theme-switch" for="themeCheckbox" title="Перемкнути тему">
+                    <input type="checkbox" id="themeCheckbox">
+                    <span class="slider round"></span>
+                </label>
+            </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    <%# Скрипт для перемикання теми %>
     <script>
-        // Глобальний JavaScript, наприклад, ваша функція getBotProcessStatus
-        async function getBotProcessStatus(dbId, botInternalId) {
-            const statusElement = document.getElementById(`status-text-${botInternalId}`); // <p> тег
-            const statusBadge = document.getElementById(`status-badge-${botInternalId}`); // <span> тег для значка
+        (function() { 
+            const themeToggle = document.getElementById('themeCheckbox');
+            const themeLabel = document.getElementById('theme-label');
+            const body = document.body; 
+            const htmlElement = document.documentElement; 
 
-            if (statusBadge) { // Спочатку оновлюємо значок
-                 statusBadge.className = 'badge bg-info text-dark'; // Клас завантаження
-                 statusBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Завантаження...';
-            } else if (statusElement) { // Якщо значка немає, оновлюємо весь <p>
-                statusElement.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Оновлення статусу...';
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    body.classList.add('dark-theme');
+                    // htmlElement.classList.add('dark-theme-active'); // Якщо CSS змінні на html
+                    if (themeToggle) themeToggle.checked = true;
+                    if (themeLabel) themeLabel.textContent = 'Темна тема';
+                } else {
+                    body.classList.remove('dark-theme');
+                    // htmlElement.classList.remove('dark-theme-active'); // Якщо CSS змінні на html
+                    if (themeToggle) themeToggle.checked = false;
+                    if (themeLabel) themeLabel.textContent = 'Світла тема';
+                }
+            }
+
+            function setThemePreference(theme) {
+                localStorage.setItem('theme', theme);
+                applyTheme(theme);
+            }
+
+            let preferredTheme = localStorage.getItem('theme');
+            if (!preferredTheme) { 
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    preferredTheme = 'dark';
+                } else {
+                    preferredTheme = 'light'; 
+                }
+            }
+            applyTheme(preferredTheme); 
+
+            if (themeToggle) {
+                themeToggle.addEventListener('change', function() {
+                    setThemePreference(this.checked ? 'dark' : 'light');
+                });
+            }
+
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                    if (!localStorage.getItem('theme')) { 
+                        applyTheme(e.matches ? "dark" : "light");
+                    }
+                });
+            }
+        })();
+    </script>
+
+    <%# ГЛОБАЛЬНА ФУНКЦІЯ для оновлення статусу бота (для index.ejs) %>
+    <script>
+        async function getBotProcessStatus(dbId, botInternalId) {
+            const statusElement = document.getElementById(`status-text-${botInternalId}`); // <p> тег, що містить значок
+            const statusBadge = document.getElementById(`status-badge-${botInternalId}`);   // <span> сам значок
+
+            if (statusBadge) { 
+                statusBadge.className = 'badge bg-info text-dark'; // Початковий клас для індикації завантаження
+                statusBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Завантаження...';
+            } else if (statusElement) { 
+                // Якщо немає окремого badge, оновлюємо весь <p> елемент
+                statusElement.innerHTML = '<strong>Статус процесу:</strong> <span class="badge bg-info text-dark" id="status-badge-' + botInternalId + '"><i class="fas fa-spinner fa-spin"></i> Завантаження...</span>';
             }
 
             try {
                 const response = await fetch(`/bots/process-status/${dbId}`);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}, message: ${await response.text()}`);
+                    const errorText = await response.text();
+                    throw new Error(`HTTP помилка! Статус: ${response.status}. Повідомлення: ${errorText || response.statusText}`);
                 }
                 const data = await response.json();
                 
-                let badgeText = data.status ? data.status.toUpperCase() : 'НЕВІДОМО';
+                let badgeText = data.status ? data.status.toUpperCase().replace("_", " ") : 'НЕВІДОМО';
                 let badgeClass = 'bg-secondary'; // За замовчуванням
 
-                if (data.status === 'running') {
-                    badgeClass = 'bg-success';
-                    badgeText = 'АКТИВНИЙ';
-                } else if (data.status === 'stopped') {
-                    badgeClass = 'bg-secondary'; // Узгоджено з відображенням з БД
-                    badgeText = 'ЗУПИНЕНО';
-                } else if (data.status === 'error') {
-                    badgeClass = 'bg-danger';
-                    badgeText = 'ПОМИЛКА';
-                } else if (data.status === 'stale' ) { // Новий статус з API
-                    badgeClass = 'bg-warning text-dark';
-                    badgeText = 'ЗАСТАРІЛИЙ';
-                } else if (data.status === 'starting') {
-                    badgeClass = 'bg-info text-dark';
-                    badgeText = 'ЗАПУСК...';
-                }
+                if (data.status === 'running') { badgeClass = 'bg-success'; badgeText = 'АКТИВНИЙ'; }
+                else if (data.status === 'stopped') { badgeClass = 'bg-secondary'; badgeText = 'ЗУПИНЕНО'; }
+                else if (data.status === 'error') { badgeClass = 'bg-danger'; badgeText = 'ПОМИЛКА'; }
+                else if (data.status === 'stale') { badgeClass = 'bg-warning text-dark'; badgeText = 'ЗАСТАРІЛИЙ'; }
+                else if (data.status === 'starting') { badgeClass = 'bg-info text-dark'; badgeText = 'ЗАПУСК...'; }
+                else if (data.status === 'not_found_db') { badgeClass = 'bg-dark'; badgeText = 'НЕ В БД'; }
                 
-                if (statusBadge) {
-                    statusBadge.textContent = badgeText;
-                    statusBadge.className = `badge ${badgeClass}`;
-                }
-                // Оновлюємо текстовий опис в <p> тегу, якщо він є
+                // Оновлюємо <p> тег, який містить і текстовий опис, і значок статусу
                 if (statusElement) {
                      statusElement.innerHTML = `<strong>Статус процесу:</strong> <span class="badge ${badgeClass}" id="status-badge-${botInternalId}">${badgeText}</span>`;
-                     if(data.message && data.status !== 'running' && data.status !== 'stopped' && data.status !== 'starting') { // Додаємо повідомлення, якщо це не стандартний статус
-                         statusElement.innerHTML += `<br><small class="text-muted">${data.message}</small>`;
+                     // Додаємо повідомлення від сервера, якщо воно є і статус не є типовим "робочим" або "стартовим"
+                     if(data.message && data.status && !['running', 'stopped', 'starting'].includes(data.status.toLowerCase())) {
+                         statusElement.innerHTML += `<br><small class="text-muted fst-italic">${data.message}</small>`;
                      }
                 }
 
             } catch (error) {
-                console.error('Error fetching bot process status:', error);
-                if (statusBadge) {
-                    statusBadge.textContent = 'ПОМИЛКА';
-                    statusBadge.className = 'badge bg-dark';
-                }
-                if (statusElement) { // Також оновлюємо <p>
-                     statusElement.innerHTML = `<strong>Статус процесу:</strong> <span class="badge bg-dark" id="status-badge-${botInternalId}">ПОМИЛКА</span><br><small class="text-muted">Не вдалося отримати статус.</small>`;
+                console.error('Error fetching bot process status for', botInternalId, ':', error);
+                if (statusElement) { 
+                     statusElement.innerHTML = `<strong>Статус процесу:</strong> <span class="badge bg-dark" id="status-badge-${botInternalId}">ПОМИЛКА</span><br><small class="text-muted fst-italic">Не вдалося отримати статус: ${error.message.substring(0,150)}</small>`;
                 }
             }
         }
     </script>
 </body>
 </html>
+
+

@@ -12,7 +12,7 @@
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "fs-extra": "^11.3.0",
-    "mongoose": "^8.14.3",
+    "mongoose": "^8.15.0",
     "node-telegram-bot-api": "^0.66.0",
     "short-uuid": "^5.2.0",
     "express-session": "^1.18.1",

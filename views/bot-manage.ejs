@@ -1,0 +1,283 @@
+<%- /* views/bot-manage.ejs */ %>
+<%- include('partials/header') %>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0"><i class="fas fa-cogs me-2"></i>Керування ботом: <%= bot.botId %></h2>
+        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i></a>
+    </div>
+
+    <%# Навігація по вкладках (Bootstrap Navs) %>
+    <ul class="nav nav-tabs mb-4" id="botManageTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link <%= activeTab === 'status' ? 'active' : '' %>" href="/bots/<%= bot._id %>/manage/status">
+                <i class="fas fa-tachometer-alt me-1"></i>Статус
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link <%= activeTab === 'add-command' ? 'active' : '' %>" href="/bots/<%= bot._id %>/manage/add-command">
+                <i class="fas fa-plus-circle me-1"></i>Додати команду
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link <%= activeTab === 'delete-command' ? 'active' : '' %>" href="/bots/<%= bot._id %>/manage/delete-command">
+                <i class="fas fa-trash-alt me-1"></i>Видалити команду
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link <%= activeTab === 'console' ? 'active' : '' %>" href="/bots/<%= bot._id %>/logs">
+                <i class="fas fa-terminal me-1"></i>Консоль та Логи
+            </a>
+        </li>
+         <li class="nav-item" role="presentation">
+            <a class="nav-link <%= activeTab === 'edit-code' ? 'active' : '' %>" href="/bots/edit-file/<%= bot._id %>">
+                <i class="fas fa-code me-1"></i>Редагувати весь код
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="botManageTabsContent">
+
+        <%# ВКЛАДКА: СТАТУС %>
+        <% if (activeTab === 'status') { %>
+            <div class="tab-pane fade show active" id="status-content" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <i class="fas fa-power-off me-1"></i>Пульт керування та інформація
+                    </div>
+                    <div class="card-body">
+                        <% if (locals.messages && locals.messages.error) { %> <div class="alert alert-danger alert-dismissible fade show"><%= locals.messages.error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+                        <% if (locals.messages && locals.messages.success) { %> <div class="alert alert-success alert-dismissible fade show"><%= locals.messages.success %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+                        
+                        <div class="row">
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <h5 class="card-title"><i class="fas fa-toggle-on me-1"></i>Дії з ботом</h5>
+                                <div class="btn-group-vertical w-100" role="group" aria-label="Bot actions">
+                                    <button class="btn btn-success bot-action-btn mb-1" data-action="start" data-botid="<%= bot._id %>" id="btn-start-bot"><i class="fas fa-play"></i> Запуск</button>
+                                    <button class="btn btn-danger bot-action-btn mb-1" data-action="stop" data-botid="<%= bot._id %>" id="btn-stop-bot"><i class="fas fa-stop"></i> Зупинка</button>
+                                    <form action="/bots/restart/<%= bot._id %>" method="POST" class="d-block">
+                                        <button type="submit" class="btn btn-warning w-100" id="btn-restart-bot"><i class="fas fa-sync-alt"></i> Перезапуск</button>
+                                    </form>
+                                </div>
+                                <div id="action-feedback" class="mt-2 small"></div>
+                            </div>
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <h5 class="card-title"><i class="fas fa-clock me-1"></i>Час сервера</h5>
+                                <p id="server-time" class="fs-5 fw-light"></p>
+                                <h5 class="card-title mt-3"><i class="fas fa-info-circle me-1"></i>ID Бота</h5>
+                                <p><code class="p-1 bg-light rounded"><%= bot.botId %></code></p>
+                            </div>
+                             <div class="col-lg-4 col-md-12 mb-3">
+                                <h5 class="card-title"><i class="fas fa-bug me-1"></i>Закріплена помилка</h5>
+                                <% if (bot.pinnedError) { %>
+                                    <div class="alert alert-danger small p-2">
+                                        <p class="mb-1"><strong>Помилка:</strong> <%= bot.pinnedError %></p>
+                                        <% if (bot.lastPinnedErrorTime) { %>
+                                        <p class="mb-0 text-muted small">Останній раз: <%= new Date(bot.lastPinnedErrorTime).toLocaleString('uk-UA', { dateStyle: 'medium', timeStyle: 'medium' }) %></p>
+                                        <% } %>
+                                    </div>
+                                <% } else { %>
+                                    <p class="text-success"><i class="fas fa-check-circle"></i> Немає закріплених помилок.</p>
+                                <% } %>
+                            </div>
+                        </div>
+                         <hr>
+                        <h5 class="card-title"><i class="fas fa-clipboard-list me-1"></i>Детальний статус</h5>
+                        <div id="bot-status-info" class="mt-2">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Статус в БД:</strong> <span id="db-status-badge" class="badge fs-6"><%= bot.status %></span></p>
+                                    <p class="mb-1"><strong>Останнє повідомлення з БД:</strong></p>
+                                    <pre id="db-last-message" class="form-control" style="white-space: pre-wrap; word-break: break-all;"><%= bot.lastMessage || 'N/A' %></pre>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Актуальний статус процесу:</strong> <span id="process-status-badge" class="badge fs-6 bg-secondary">Завантаження...</span></p>
+                                    <p class="mb-1"><strong>Повідомлення від процесу:</strong></p>
+                                    <pre id="process-status-message" class="form-control" style="white-space: pre-wrap; word-break: break-all; min-height: 50px;">Завантаження...</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <%# ВКЛАДКА: ДОДАТИ КОМАНДУ %>
+        <% if (activeTab === 'add-command') { %>
+            <div class="tab-pane fade show active" id="add-command-content" role="tabpanel">
+                 <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="card-title mb-0"><i class="fas fa-plus-circle me-1"></i>Додати нову команду</h3>
+                    </div>
+                    <div class="card-body">
+                        <% if (locals.messages && locals.messages.command_success) { %><div class="alert alert-success alert-dismissible fade show"><%= locals.messages.command_success %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+                        <% if (locals.messages && locals.messages.command_error) { %><div class="alert alert-danger alert-dismissible fade show"><%= locals.messages.command_error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+                        <form action="/bots/add-command/<%= bot._id %>" method="POST">
+                            <div class="mb-3">
+                                <label for="newCommandName" class="form-label"><strong>Назва команди (без `/`):</strong></label>
+                                <input type="text" class="form-control" id="newCommandName" name="newCommandName" required placeholder="наприклад, greet або my_info" value="<%= locals.newCommandName || '' %>">
+                                <div class="form-text">Введіть назву команди. Знак `/` буде додано автоматично (напр., `/greet`). Використовуйте літери, цифри та підкреслення.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="actionCode" class="form-label"><strong>Дія команди (JavaScript код):</strong></label>
+                                <textarea class="form-control code-textarea" id="actionCode" name="actionCode" rows="8" required placeholder="bot.sendMessage(chatId, 'Привіт!');"><%= locals.actionCode || '' %></textarea>
+                                <div class="form-text">
+                                    Цей код буде виконано, коли користувач надішле команду.
+                                    Доступні змінні: <code>msg</code>, <code>chatId</code>, <code>match</code>.
+                                    <br><strong>Приклад:</strong> <code>bot.sendMessage(chatId, `Ваш ID: ${msg.from.id}`);</code>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success"><i class="fas fa-plus-circle me-1"></i>Додати команду до файлу</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <%# ВКЛАДКА: ВИДАЛИТИ КОМАНДУ %>
+        <% if (activeTab === 'delete-command') { %>
+            <div class="tab-pane fade show active" id="delete-command-content" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-danger text-white">
+                        <h3 class="card-title mb-0"><i class="fas fa-trash-alt me-1"></i>Видалити команду</h3>
+                    </div>
+                    <div class="card-body">
+                        <% if (locals.messages && locals.messages.command_delete_success) { %><div class="alert alert-success alert-dismissible fade show"><%= locals.messages.command_delete_success %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+                        <% if (locals.messages && locals.messages.command_delete_error) { %><div class="alert alert-danger alert-dismissible fade show"><%= locals.messages.command_delete_error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+                        <form action="/bots/delete-command/<%= bot._id %>" method="POST" onsubmit="return confirm('Ви впевнені, що хочете видалити цю команду з файлу бота? Ця дія незворотна.');">
+                            <div class="mb-3">
+                                <label for="commandNameToDelete" class="form-label"><strong>Назва команди для видалення (без `/`):</strong></label>
+                                <input type="text" class="form-control" id="commandNameToDelete" name="commandNameToDelete" required placeholder="наприклад, greet або my_info" value="<%= locals.commandNameToDeleteValue || '' %>">
+                                 <div class="form-text">Введіть точну назву команди, яку було додано через форму вище.</div>
+                            </div>
+                            <button type="submit" class="btn btn-danger"><i class="fas fa-trash me-1"></i>Видалити команду з файлу</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+        
+    </div>
+</div>
+
+<%# JavaScript для вкладки "Статус" %>
+<% if (activeTab === 'status') { %>
+<script>
+    function updateServerTime() {
+        const now = new Date();
+        const timeEl = document.getElementById('server-time');
+        if(timeEl) timeEl.textContent = now.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    setInterval(updateServerTime, 1000);
+    updateServerTime();
+
+    const botDbIdForStatus = "<%= bot._id %>";
+    const dbStatusBadge = document.getElementById('db-status-badge');
+    const dbLastMessage = document.getElementById('db-last-message');
+    const processStatusBadge = document.getElementById('process-status-badge');
+    const processStatusMessage = document.getElementById('process-status-message');
+    const actionFeedback = document.getElementById('action-feedback');
+
+    function mapDbStatusToBadgeClass(status) {
+        if (status === 'running') return 'bg-success';
+        if (status === 'stopped') return 'bg-secondary';
+        if (status === 'error') return 'bg-danger';
+        if (status === 'starting') return 'bg-info text-dark';
+        return 'bg-light text-dark';
+    }
+    if(dbStatusBadge) dbStatusBadge.className = 'badge fs-6 ' + mapDbStatusToBadgeClass('<%= bot.status %>');
+
+    async function fetchBotRealtimeStatus(showLoading = true) {
+        if(showLoading && processStatusBadge) {
+            processStatusBadge.textContent = 'Оновлення...';
+            processStatusBadge.className = 'badge fs-6 bg-info text-dark';
+        }
+        if(showLoading && processStatusMessage) processStatusMessage.textContent = 'Запит статусу...';
+
+
+        try {
+            const response = await fetch(`/bots/process-status/${botDbIdForStatus}`);
+            if (!response.ok) {
+                if(processStatusBadge) {
+                    processStatusBadge.textContent = 'Помилка запиту';
+                    processStatusBadge.className = 'badge fs-6 bg-dark';
+                }
+                if(processStatusMessage) processStatusMessage.textContent = `Не вдалося завантажити статус: ${response.status}`;
+                return;
+            }
+            const data = await response.json();
+
+            let processBadgeClass = 'bg-secondary';
+            let processBadgeText = data.status ? data.status.toUpperCase().replace("_", " ") : 'НЕВІДОМО';
+            if (data.status === 'running') processBadgeClass = 'bg-success';
+            else if (data.status === 'stopped') processBadgeClass = 'bg-secondary';
+            else if (data.status === 'error') processBadgeClass = 'bg-danger';
+            else if (data.status === 'stale') processBadgeClass = 'bg-warning text-dark';
+            else if (data.status === 'starting') processBadgeClass = 'bg-info text-dark';
+            else if (data.status === 'not_found_db') processBadgeClass = 'bg-dark';
+            
+            if(processStatusBadge) {
+                processStatusBadge.textContent = processBadgeText;
+                processStatusBadge.className = `badge fs-6 ${processBadgeClass}`;
+            }
+            if(processStatusMessage) processStatusMessage.textContent = data.message || 'N/A';
+
+            if (data.dbStatus && dbStatusBadge) {
+                dbStatusBadge.textContent = data.dbStatus;
+                dbStatusBadge.className = 'badge fs-6 ' + mapDbStatusToBadgeClass(data.dbStatus);
+            }
+            if (data.lastMessageFromDB && dbLastMessage) {
+                dbLastMessage.textContent = data.lastMessageFromDB || 'N/A';
+            }
+            
+        } catch (error) {
+            console.error('Error fetching bot realtime status:', error);
+            if(processStatusBadge) {
+                processStatusBadge.textContent = 'Помилка зв\'язку';
+                processStatusBadge.className = 'badge fs-6 bg-dark';
+            }
+            if(processStatusMessage) processStatusMessage.textContent = 'Не вдалося оновити статус.';
+        }
+    }
+    
+    if(document.getElementById('status-content')) { // Run only if on status tab
+        fetchBotRealtimeStatus();
+        setInterval(() => fetchBotRealtimeStatus(false), 7000); // Оновлювати кожні 7 секунд, без повного індикатора завантаження
+    }
+    
+
+    document.querySelectorAll('.bot-action-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const action = this.dataset.action;
+            const botId = this.dataset.botid;
+            
+            document.querySelectorAll('.bot-action-btn').forEach(btn => btn.disabled = true);
+            if(actionFeedback) actionFeedback.innerHTML = `<div class="text-info"><i class="fas fa-spinner fa-spin"></i> Обробка команди <strong>${action.toUpperCase()}</strong>...</div>`;
+
+            try {
+                const response = await fetch(`/bots/api/${botId}/${action}`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    if(actionFeedback) actionFeedback.innerHTML = `<div class="text-success"><i class="fas fa-check-circle"></i> Команда ${action.toUpperCase()} виконана: ${result.message}</div>`;
+                    setTimeout(() => fetchBotRealtimeStatus(false), 1500);
+                } else {
+                    if(actionFeedback) actionFeedback.innerHTML = `<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Помилка ${action.toUpperCase()}: ${result.message}</div>`;
+                }
+            } catch (err) {
+                 if(actionFeedback) actionFeedback.innerHTML = `<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Помилка зв'язку при виконанні ${action.toUpperCase()}.</div>`;
+                console.error(err);
+            } finally {
+                 setTimeout(() => { 
+                    if(actionFeedback) actionFeedback.innerHTML = '';
+                    document.querySelectorAll('.bot-action-btn').forEach(btn => btn.disabled = false);
+                }, 4000);
+            }
+        });
+    });
+
+</script>
+<% } %>
+
+<%- include('partials/footer') %>
+

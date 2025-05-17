@@ -88,12 +88,12 @@
                                 <div class="col-md-6">
                                     <p><strong>Статус в БД:</strong> <span id="db-status-badge" class="badge fs-6"><%= bot.status %></span></p>
                                     <p class="mb-1"><strong>Останнє повідомлення з БД:</strong></p>
-                                    <pre id="db-last-message" class="small bg-light p-2 rounded" style="white-space: pre-wrap; word-break: break-all;"><%= bot.lastMessage || 'N/A' %></pre>
+                                    <pre id="db-last-message" class="form-control" style="white-space: pre-wrap; word-break: break-all;"><%= bot.lastMessage || 'N/A' %></pre>
                                 </div>
                                 <div class="col-md-6">
                                     <p><strong>Актуальний статус процесу:</strong> <span id="process-status-badge" class="badge fs-6 bg-secondary">Завантаження...</span></p>
                                     <p class="mb-1"><strong>Повідомлення від процесу:</strong></p>
-                                    <pre id="process-status-message" class="small text-muted p-2 bg-light rounded" style="white-space: pre-wrap; word-break: break-all; min-height: 50px;">Завантаження...</pre>
+                                    <pre id="process-status-message" class="form-control" style="white-space: pre-wrap; word-break: break-all; min-height: 50px;">Завантаження...</pre>
                                 </div>
                             </div>
                         </div>

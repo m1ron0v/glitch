@@ -184,7 +184,7 @@ body {
     "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  overflow-x: hidden; /* Залишаємо hidden для body, щоб уникнути подвійного скролу */
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
@@ -547,37 +547,47 @@ body.dark-theme .badge.bg-warning.text-dark {
 .nav-tabs {
   border-bottom: 1px solid var(--nav-tabs-border-color);
   margin-bottom: 1.5rem;
+  /* NEW STYLES FOR HORIZONTAL SCROLLING */
+  display: flex; /* Використовуємо flexbox для розміщення елементів в ряд */
+  flex-wrap: nowrap; /* Забороняємо перенос елементів на новий рядок */
+  overflow-x: auto; /* Додаємо горизонтальний скрол, якщо елементи не вміщаються */
+  overflow-y: hidden; /* Ховаємо вертикальний скрол, якщо раптом з'явиться */
+  padding-bottom: 5px; /* Невеликий відступ знизу, щоб скролбар не налізав на контент */
+  -webkit-overflow-scrolling: touch; /* Плавний скрол на мобільних пристроях iOS */
 }
+
+/* Стилі для елементів вкладок, щоб вони не звужувалися надто сильно */
+.nav-tabs .nav-item {
+  flex-shrink: 0; /* Забороняємо елементам звужуватися */
+}
+
 .nav-tabs .nav-link {
   color: var(--nav-tabs-link-color);
   background-color: transparent;
-  border: 1px solid transparent; /* Початково всі рамки прозорі */
-  border-bottom-width: 0; /* Немає нижньої рамки для неактивних */
+  border: 1px solid transparent;
+  border-bottom-width: 0;
   margin-bottom: -1px; /* Щоб активна вкладка перекривала загальну лінію .nav-tabs */
-  padding: 0.65rem 1.1rem; /* Трохи змінено падінги */
+  padding: 0.65rem 1.1rem;
   border-top-left-radius: 0.375rem;
   border-top-right-radius: 0.375rem;
   transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
     border-color 0.15s ease-in-out;
+  white-space: nowrap; /* Текст вкладки не переноситься */
 }
 .nav-tabs .nav-link:hover,
 .nav-tabs .nav-link:focus {
   color: var(--nav-tabs-link-hover-color);
-  background-color: var(--nav-tabs-link-hover-bg); /* Фон при наведенні */
+  background-color: var(--nav-tabs-link-hover-bg);
   border-color: var(--nav-tabs-border-color) var(--nav-tabs-border-color)
-    var(--nav-tabs-border-color) var(--nav-tabs-border-color); /* Тонка рамка навколо */
-  border-bottom-color: var(
-    --nav-tabs-link-hover-bg
-  ); /* Нижня межа зливається з фоном */
+    var(--nav-tabs-border-color) var(--nav-tabs-border-color);
+  border-bottom-color: var(--nav-tabs-link-hover-bg);
 }
 .nav-tabs .nav-link.active {
   color: var(--nav-tabs-link-active-color) !important;
-  background-color: var(
-    --nav-tabs-link-active-bg
-  ) !important; /* Фон активної вкладки */
+  background-color: var(--nav-tabs-link-active-bg) !important;
   border-color: var(--nav-tabs-link-active-border-color)
-    var(--nav-tabs-link-active-border-color) var(--nav-tabs-link-active-bg) !important; /* Рамки зверху, зліва, справа. Нижня - колір фону вкладки */
-  font-weight: 500; /* Трохи жирніше */
+    var(--nav-tabs-link-active-border-color) var(--nav-tabs-link-active-bg) !important;
+  font-weight: 500;
 }
 
 /* --- Перемикач теми --- */
@@ -661,6 +671,7 @@ input:checked + .slider:before {
   .theme-switch-wrapper {
     margin-top: 0.5rem;
   }
+  /* На мобільних пристроях вкладки також будуть скролитися, якщо не вміщаються */
 }
 
 /* --- Утиліти --- */
@@ -725,4 +736,29 @@ input:checked + .slider:before {
 body.dark-theme .card-header.bg-dark,
 body.dark-theme .card-header.bg-dark > * {
   color: #f8f9fa !important;
+}
+
+/* Кастомізація скролбару для .nav-tabs (опціонально, для кращого вигляду) */
+.nav-tabs::-webkit-scrollbar {
+  height: 8px; /* Висота скролбару */
+}
+
+.nav-tabs::-webkit-scrollbar-track {
+  background: var(--card-bg); /* Колір треку скролбару */
+  border-radius: 10px;
+}
+
+.nav-tabs::-webkit-scrollbar-thumb {
+  background: var(--text-muted-color); /* Колір самого скролбару */
+  border-radius: 10px;
+}
+
+.nav-tabs::-webkit-scrollbar-thumb:hover {
+  background: var(--link-color); /* Колір скролбару при наведенні */
+}
+
+/* Для Firefox */
+.nav-tabs {
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: var(--text-muted-color) var(--card-bg); /* thumb and track color */
 }

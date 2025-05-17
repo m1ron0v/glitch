@@ -6,9 +6,9 @@
         <h2 class="mb-0"><i class="fas fa-file-alt me-2"></i><%= pageTitle %></h2>
         <div>
             <% if (locals.navBotId) { %> 
-                <a href="/bots/<%= locals.navBotId %>/manage/status" class="btn btn-outline-primary me-2"><i class="fas fa-cogs me-1"></i></a>
+                <a href="/bots/<%= locals.navBotId %>/manage/status" class="btn btn-outline-primary me-2"><i class="fas fa-cogs me-1"></i>До керування ботом</a>
             <% } %>
-            <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i></a>
+            <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>До списку ботів</a>
         </div>
     </div>
 
@@ -34,7 +34,7 @@
             </button>
         </div>
         <div class="card-body">
-            <pre id="logContentOutput" style="white-space: pre-wrap; word-wrap: break-word; background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 0.25rem; max-height: 60vh; overflow-y: auto; font-size: 0.85em;"></pre>
+            <pre id="logContentOutput" style="white-space: pre-wrap; word-wrap: break-word; background-color: var(--log-output-bg); color: var(--log-output-color); padding: 15px; border-radius: 0.375rem; max-height: 60vh; overflow-y: auto; font-size: 0.85em;"></pre>
         </div>
     </div>
 
@@ -43,19 +43,22 @@
             <i class="fas fa-terminal me-2"></i>Консоль команд для бота: <strong><%= bot.botId %></strong>
         </div>
         <div class="card-body">
-            <div id="consoleFeedback" class="mb-2" style="min-height: 20px;"></div>
+            <div id="consoleFeedback" class="mb-2 p-2 rounded" style="min-height: 40px; background-color: var(--input-disabled-bg); border: 1px solid var(--input-border-color);"></div>
             <div class="input-group">
-                <input type="text" class="form-control" id="consoleInput" placeholder="Введіть команду (напр., /start, /stop, /status, /refresh)">
+                <input type="text" class="form-control" id="consoleInput" placeholder="Введіть команду або повідомлення...">
                 <button class="btn btn-primary" type="button" id="sendConsoleCommandBtn"><i class="fas fa-paper-plane"></i> Надіслати</button>
             </div>
-            <div class="form-text">Доступні команди: <code>/start</code>, <code>/stop</code>, <code>/status</code>, <code>/refresh</code>. Натисніть Enter або кнопку "Надіслати".</div>
+            <div class="form-text mt-2"> {/* ОНОВЛЕНА ПІДКАЗКА */}
+                Команди менеджера: <code>start</code>, <code>stop</code>, <code>status</code>, <code>refresh</code> (без слеша).<br>
+                Для надсилання повідомлення/команди боту: введіть текст або команду зі слешем (напр., <code>/mycommand</code>, <code>звичайний текст</code>).
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    const botDbId = "<%= bot._id %>"; // bot._id передається з маршруту як bot.id
-    const botInternalId = "<%= bot.botId %>"; // bot.botId передається з маршруту
+    const botDbId = "<%= bot._id %>"; 
+    const botInternalId = "<%= bot.botId %>"; 
     const logContentOutput = document.getElementById('logContentOutput');
     const refreshLogsBtn = document.getElementById('refreshLogsBtn');
     const countdownElement = document.getElementById('countdown');
@@ -101,11 +104,11 @@
             }
             logContentOutput.textContent = data.logs || 'Логи порожні.';
             setTimeout(() => { 
-                logContentOutput.scrollTop = logContentOutput.scrollHeight;
+                if(logContentOutput) logContentOutput.scrollTop = logContentOutput.scrollHeight;
             }, 100);
         } catch (error) {
             console.error('Failed to fetch logs:', error);
-            logContentOutput.textContent = 'Не вдалося завантажити логи. Перевірте консоль браузера або логи сервера.';
+            if (logContentOutput) logContentOutput.textContent = 'Не вдалося завантажити логи. Перевірте консоль браузера або логи сервера.';
             if (pinnedErrorContainer) pinnedErrorContainer.style.display = 'none';
         } finally {
             if (refreshLogsBtn) {
@@ -144,75 +147,102 @@
 
     function displayConsoleFeedback(message, isError = false) {
         if (consoleFeedback) {
-            consoleFeedback.textContent = message;
-            consoleFeedback.className = 'mb-2'; 
+            consoleFeedback.innerHTML = ''; // Очищуємо попереднє
+            const p = document.createElement('p');
+            p.textContent = message;
+            p.className = 'mb-0'; 
             if (isError) {
-                consoleFeedback.classList.add('text-danger');
+                p.classList.add('text-danger');
             } else {
-                consoleFeedback.classList.add('text-success');
+                p.classList.add('text-success');
             }
+            consoleFeedback.appendChild(p);
         }
     }
 
-    async function handleConsoleCommand() {
+    async function handleConsoleCommand() { // ОНОВЛЕНА ФУНКЦІЯ
         if (!consoleInput) return;
-        const commandFull = consoleInput.value.trim();
-        if (!commandFull) return;
+        const fullInput = consoleInput.value.trim();
+        if (!fullInput) return;
 
-        const [command, ...args] = commandFull.split(' ');
         consoleInput.value = ''; 
-        displayConsoleFeedback(`Обробка команди: ${command}...`, false);
         if(sendConsoleCommandBtn) sendConsoleCommandBtn.disabled = true;
 
         try {
             let response;
             let data;
             
-            switch (command.toLowerCase()) {
-                case '/refresh':
-                    await fetchLogs();
-                    displayConsoleFeedback('Логи оновлено.', false);
-                    break;
-                case '/status':
-                    response = await fetch(`/bots/process-status/${botDbId}`);
-                    if (!response.ok) throw new Error(`HTTP помилка! Статус: ${response.status}`);
-                    data = await response.json();
-                    let statusMessage = `Статус: ${data.status || 'N/A'}. БД: ${data.dbStatus || 'N/A'}. Повідомлення: ${data.message || 'Немає'}.`;
-                    if(data.pinnedError) statusMessage += ` Закріплена помилка: ${data.pinnedError}`;
-                    displayConsoleFeedback(statusMessage, data.status === 'error' || data.status === 'stale');
-                    break;
-                case '/start':
-                    response = await fetch(`/bots/api/${botDbId}/start`, { method: 'POST' });
-                    if (!response.ok) { 
-                        data = await response.json().catch(() => ({ message: `HTTP помилка ${response.status}`}));
-                        throw new Error(data.message || `Помилка сервера: ${response.status}`);
-                    }
-                    data = await response.json();
-                    displayConsoleFeedback(data.message || 'Команда /start виконана.', !data.success);
-                    if(data.success) {
-                        await fetchLogs(); 
-                        setTimeout(fetchLogs, 2000);
-                    }
-                    break;
-                case '/stop':
-                    response = await fetch(`/bots/api/${botDbId}/stop`, { method: 'POST' });
-                    if (!response.ok) {
-                        data = await response.json().catch(() => ({ message: `HTTP помилка ${response.status}`}));
-                        throw new Error(data.message || `Помилка сервера: ${response.status}`);
-                    }
-                    data = await response.json();
-                    displayConsoleFeedback(data.message || 'Команда /stop виконана.', !data.success);
-                    if(data.success) {
+            const managerCommandKeywords = ['start', 'stop', 'status', 'refresh'];
+            const firstWord = fullInput.split(' ')[0].toLowerCase();
+
+            if (managerCommandKeywords.includes(firstWord) && !fullInput.startsWith('/')) {
+                const managerCommand = firstWord;
+                displayConsoleFeedback(`Обробка команди менеджера: ${managerCommand}...`, false);
+
+                switch (managerCommand) {
+                    case 'refresh':
                         await fetchLogs();
-                        setTimeout(fetchLogs, 1500);
-                    }
-                    break;
-                default:
-                    displayConsoleFeedback(`Невідома команда: ${command}`, true);
+                        displayConsoleFeedback('Логи оновлено.', false);
+                        break;
+                    case 'status':
+                        response = await fetch(`/bots/process-status/${botDbId}`);
+                        if (!response.ok) throw new Error(`HTTP помилка! Статус: ${response.status}`);
+                        data = await response.json();
+                        let statusMessage = `Статус: ${data.status || 'N/A'}. БД: ${data.dbStatus || 'N/A'}. Повідомлення: ${data.message || 'Немає'}.`;
+                        if(data.pinnedError) statusMessage += ` Закріплена помилка: ${data.pinnedError}`;
+                        displayConsoleFeedback(statusMessage, data.status === 'error' || data.status === 'stale');
+                        break;
+                    case 'start':
+                        response = await fetch(`/bots/api/${botDbId}/start`, { method: 'POST' });
+                        if (!response.ok) { 
+                            data = await response.json().catch(() => ({ message: `HTTP помилка ${response.status}`}));
+                            throw new Error(data.message || `Помилка сервера: ${response.status}`);
+                        }
+                        data = await response.json();
+                        displayConsoleFeedback(data.message || 'Команда "start" виконана.', !data.success);
+                        if(data.success) {
+                            await fetchLogs(); 
+                            setTimeout(fetchLogs, 2000);
+                        }
+                        break;
+                    case 'stop':
+                        response = await fetch(`/bots/api/${botDbId}/stop`, { method: 'POST' });
+                        if (!response.ok) {
+                            data = await response.json().catch(() => ({ message: `HTTP помилка ${response.status}`}));
+                            throw new Error(data.message || `Помилка сервера: ${response.status}`);
+                        }
+                        data = await response.json();
+                        displayConsoleFeedback(data.message || 'Команда "stop" виконана.', !data.success);
+                        if(data.success) {
+                            await fetchLogs();
+                            setTimeout(fetchLogs, 1500);
+                        }
+                        break;
+                }
+            } else {
+                displayConsoleFeedback(`Надсилання повідомлення боту: "${fullInput.substring(0, 50)}"...`, false);
+                response = await fetch(`/bots/api/${botDbId}/send_message_to_bot`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ messageText: fullInput }) 
+                });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: `HTTP помилка ${response.status}` }));
+                    throw new Error(errorData.message || `Помилка сервера при надсиланні повідомлення: ${response.status}`);
+                }
+                data = await response.json();
+                if (data.success) {
+                    displayConsoleFeedback(data.message || 'Повідомлення надіслано. Дивіться логи для відповіді/реакції бота.', false);
+                    setTimeout(fetchLogs, 700); 
+                } else {
+                    displayConsoleFeedback(`Помилка надсилання: ${data.message || 'Невідома помилка відправки'}`, true);
+                }
             }
         } catch (error) {
             console.error('Console command error:', error);
-            displayConsoleFeedback(`Помилка виконання команди: ${error.message || 'Невідома помилка'}`, true);
+            displayConsoleFeedback(`Помилка виконання: ${error.message || 'Невідома помилка'}`, true);
         } finally {
             if(sendConsoleCommandBtn) sendConsoleCommandBtn.disabled = false;
         }

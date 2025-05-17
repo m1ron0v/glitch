@@ -117,7 +117,7 @@
                     </div>
                 </div>
 
-                <div class="row"> <Deck
+                <div class="row"> <%# Card Deck %>
                     <div class="col-md-6 mb-4"> <%# Command Usage Card %>
                         <div class="card shadow-sm h-100">
                             <div class="card-header">
@@ -125,7 +125,7 @@
                             </div>
                             <div class="card-body">
                                 <div id="command-usage-stats" style="max-height: 300px; overflow-y: auto;">
-                                    <p class="text-center">
+                                    <p class="form-control text-center">
                                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                         Завантаження статистики...
                                     </p>
@@ -133,7 +133,7 @@
                                 <button class="btn btn-sm btn-outline-secondary mt-2" id="refreshCommandStatsBtn" title="Оновити статистику команд">
                                     <i class="fas fa-sync-alt"></i> Оновити
                                 </button>
-                                <div id="command-stats-feedback" class="mt-1 small text-muted"></div>
+                                <div id="command-stats-feedback" class=" mt-1 small text-muted"></div>
                             </div>
                         </div>
                     </div>
@@ -145,7 +145,7 @@
                             </div>
                             <div class="card-body">
                                 <div id="error-summary-stats" style="max-height: 300px; overflow-y: auto;">
-                                    <p class="text-center">
+                                    <p class="form-control text-center">
                                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                         Завантаження статистики...
                                     </p>
@@ -153,11 +153,11 @@
                                 <button class="btn btn-sm btn-outline-secondary mt-2" id="refreshErrorSummaryBtn" title="Оновити статистику помилок">
                                     <i class="fas fa-sync-alt"></i> Оновити
                                 </button>
-                                <div id="error-summary-feedback" class="mt-1 small text-muted"></div>
+                                <div id="error-summary-feedback" class=" mt-1 small text-muted"></div>
                             </div>
                         </div>
                     </div>
-                    </div>
+                </div>
             </div>
         <% } %>
 
@@ -246,15 +246,12 @@
     const refreshCommandStatsBtn = document.getElementById('refreshCommandStatsBtn');
     const commandStatsFeedbackElem = document.getElementById('command-stats-feedback');
 
-    // >>> NEW: Elements for Error Summary Stats <<<
     const errorSummaryStatsElem = document.getElementById('error-summary-stats');
     const refreshErrorSummaryBtn = document.getElementById('refreshErrorSummaryBtn');
     const errorSummaryFeedbackElem = document.getElementById('error-summary-feedback');
-    // >>> END NEW <<<
 
 
     function mapDbStatusToBadgeClass(status) {
-        // ... (існуючий код)
         if (status === 'running') return 'bg-success';
         if (status === 'stopped') return 'bg-secondary';
         if (status === 'error') return 'bg-danger';
@@ -264,7 +261,6 @@
     if(dbStatusBadge) dbStatusBadge.className = 'badge fs-6 ' + mapDbStatusToBadgeClass('<%= bot.status %>');
 
     async function fetchBotRealtimeStatus(showLoading = true) {
-        // ... (існуючий код)
         if(showLoading && processStatusBadge) {
             processStatusBadge.textContent = 'Оновлення...';
             processStatusBadge.className = 'badge fs-6 bg-info text-dark';
@@ -315,7 +311,6 @@
     }
     
     async function fetchUniqueUsers() {
-        // ... (існуючий код)
         if (!uniqueUsersCountElem || !botDbIdForStatus) return;
 
         uniqueUsersCountElem.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Завантаження...';
@@ -345,7 +340,6 @@
     }
 
     async function fetchCommandUsageStats() {
-        // ... (існуючий код)
         if (!commandUsageStatsElem || !botDbIdForStatus) return;
 
         commandUsageStatsElem.innerHTML = '<p class="text-center"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Завантаження статистики...</p>';
@@ -387,7 +381,6 @@
         }
     }
 
-    // >>> NEW: Function to fetch error summary stats <<<
     async function fetchErrorSummaryStats() {
         if (!errorSummaryStatsElem || !botDbIdForStatus) return;
 
@@ -410,7 +403,6 @@
                 } else {
                     let html = '<ul class="list-group list-group-flush">';
                     data.errorSummary.forEach(item => {
-                        // Using a smaller font for error messages to fit more text if needed
                         html += `<li class="list-group-item d-flex justify-content-between align-items-center">
                                     <span class="text-danger small" title="${item.error}">${item.error.length > 70 ? item.error.substring(0, 67) + '...' : item.error}</span>
                                     <span class="badge bg-danger rounded-pill">${item.count}</span>
@@ -430,14 +422,13 @@
             if (refreshErrorSummaryBtn) refreshErrorSummaryBtn.disabled = false;
         }
     }
-    // >>> END NEW <<<
 
     if(document.getElementById('status-content')) { 
         fetchBotRealtimeStatus();
         setInterval(() => fetchBotRealtimeStatus(false), 7000); 
         fetchUniqueUsers(); 
         fetchCommandUsageStats(); 
-        fetchErrorSummaryStats(); // >>> NEW: Fetch error summary on load <<<
+        fetchErrorSummaryStats(); 
     }
     
     if (refreshUniqueUsersBtn) {
@@ -447,11 +438,9 @@
         refreshCommandStatsBtn.addEventListener('click', fetchCommandUsageStats);
     }
 
-    // >>> NEW: Event listener for refresh error summary button <<<
     if (refreshErrorSummaryBtn) {
         refreshErrorSummaryBtn.addEventListener('click', fetchErrorSummaryStats);
     }
-    // >>> END NEW <<<
 
     document.querySelectorAll('.bot-action-btn').forEach(button => {
         button.addEventListener('click', async function() {
@@ -470,7 +459,7 @@
                     setTimeout(() => fetchBotRealtimeStatus(true), 1500); 
                     setTimeout(() => fetchUniqueUsers(), 1800); 
                     setTimeout(() => fetchCommandUsageStats(), 2100); 
-                    setTimeout(() => fetchErrorSummaryStats(), 2400); // >>> NEW: Refresh error summary after action <<<
+                    setTimeout(() => fetchErrorSummaryStats(), 2400); 
                 } else {
                     if(actionFeedback) actionFeedback.innerHTML = `<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Помилка ${action.toUpperCase()}: ${result.message}</div>`;
                 }

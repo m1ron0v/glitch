@@ -1,18 +1,19 @@
-// routes/bots.js (ПОВНА ВЕРСІЯ З ВИПРАВЛЕНИМ МАРШРУТОМ /manage)
+// routes/bots.js
 const express = require("express");
 const router = express.Router();
-const Bot = require("../models/bot"); // Переконайтеся, що шлях до моделі правильний
+const Bot = require("../models/bot");
 const fs = require("fs-extra");
 const path = require("path");
 const { fork } = require("child_process");
 const short = require("short-uuid");
+const readline = require("readline");
 
 const BOTS_DIR = path.join(__dirname, "..", "app");
 const LOGS_DIR = path.join(__dirname, "..", "logs");
 fs.ensureDirSync(BOTS_DIR);
 fs.ensureDirSync(LOGS_DIR);
 
-const runningBotProcesses = {}; // { botDbIdString: childProcess }
+const runningBotProcesses = {};
 
 async function updateBotStatusAndError(
   botInternalId,
@@ -69,7 +70,8 @@ async function startBotProcess(botData) {
 
   if (
     runningBotProcesses[botDbIdString] &&
-    runningBotProcesses[botDbIdString].connected
+    runningBotProcesses[botDbIdString].connected &&
+    !runningBotProcesses[botDbIdString].killed
   ) {
     console.log(
       `[Manager] Bot ${botData.botId} (${botDbIdString}) process found connected. Stopping before restart.`
@@ -129,7 +131,7 @@ async function startBotProcess(botData) {
   });
   child.stderr.on("data", (data) => {
     const message = data.toString();
-    logStream.write(`[ERR] ${message}`);
+    logStream.write(`[ERR] ${message}`); // Log stderr, which might contain error details
   });
 
   runningBotProcesses[botDbIdString] = child;
@@ -146,6 +148,7 @@ async function startBotProcess(botData) {
         newPinnedErrorToSet = msg.message;
         logStream.write(
           `[BOT_REPORTED_ERROR_VIA_IPC] ${
+            // This is a key phrase for error stats
             msg.message
           } at ${new Date().toISOString()}\n`
         );
@@ -165,6 +168,16 @@ async function startBotProcess(botData) {
         delete runningBotProcesses[botDbIdString];
       }
     }
+    if (
+      msg.type === "send_to_telegram" &&
+      msg.botId === botData.botId &&
+      msg.chatId &&
+      msg.text
+    ) {
+      console.warn(
+        `[Manager] Received 'send_to_telegram' IPC but this should be handled by bot-template.js. Bot ID: ${msg.botId}`
+      );
+    }
   });
 
   child.on("error", async (err) => {
@@ -173,6 +186,7 @@ async function startBotProcess(botData) {
     }`;
     console.error(`[Manager] Error in bot process ${botData.botId}:`, err);
     logStream.write(
+      // This is a key phrase for error stats
       `[CRITICAL_FORK_ERROR] ${errMsg} at ${new Date().toISOString()}\n`
     );
     await updateBotStatusAndError(
@@ -209,7 +223,6 @@ async function startBotProcess(botData) {
         );
         return;
       }
-
       if (botState.status === "running" || botState.status === "starting") {
         let pinnedErrMsgForExit;
         if (signal === "SIGTERM" || signal === "SIGKILL") {
@@ -224,6 +237,7 @@ async function startBotProcess(botData) {
             signal || "N/A"
           }). Перевірте логи.`;
           logStream.write(
+            // This is a key phrase for error stats
             `[UNEXPECTED_EXIT_ERROR] ${pinnedErrMsgForExit} at ${new Date().toISOString()}\n`
           );
           await updateBotStatusAndError(
@@ -283,14 +297,27 @@ async function stopBotProcess(botDbIdString, botInternalIdForLog) {
     if (runningBotProcesses[botDbIdString] === processToKill) {
       delete runningBotProcesses[botDbIdString];
     }
-    await updateBotStatusAndError(
-      botInternalIdForLog,
-      "stopped",
-      "Процес зупинено менеджером.",
-      pinnedErrorToPreserve
-    );
+    const botAfterStopAttempt = await Bot.findOne({
+      botId: botInternalIdForLog,
+    });
+    if (
+      botAfterStopAttempt &&
+      botAfterStopAttempt.status !== "stopped" &&
+      botAfterStopAttempt.status !== "error"
+    ) {
+      await updateBotStatusAndError(
+        botInternalIdForLog,
+        "stopped",
+        "Процес зупинено менеджером.",
+        pinnedErrorToPreserve
+      );
+    }
   } else {
-    if (botBeforeStop && botBeforeStop.status !== "stopped") {
+    if (
+      botBeforeStop &&
+      (botBeforeStop.status === "running" ||
+        botBeforeStop.status === "starting")
+    ) {
       console.log(
         `[Manager] Process for ${botInternalIdForLog} not actively tracked or already killed. Marking as stopped in DB.`
       );
@@ -307,26 +334,34 @@ async function stopBotProcess(botDbIdString, botInternalIdForLog) {
   }
 }
 
-// --- Визначення маршрутів ---
 router.get("/add", (req, res) => {
-  res.render("add-bot");
+  res.render("add-bot", {
+    pageTitle: "Додати нового бота",
+    activePage: "add",
+  });
 });
 
 router.post("/add", async (req, res, next) => {
   const { token, statusCheckCommand } = req.body;
   if (!token || !statusCheckCommand) {
     req.flash("error", "Токен та команда статусу є обов'язковими.");
-    req.flash("formToken", token);
-    req.flash("formStatusCommand", statusCheckCommand);
-    return res.redirect("/bots/add");
+    res.locals.token = token;
+    res.locals.statusCheckCommand = statusCheckCommand;
+    return res.render("add-bot", {
+      pageTitle: "Додати нового бота",
+      activePage: "add",
+    });
   }
   try {
     const existingBotByToken = await Bot.findOne({ token: token });
     if (existingBotByToken) {
       req.flash("error", "Бот з таким токеном вже існує.");
-      req.flash("formToken", token);
-      req.flash("formStatusCommand", statusCheckCommand);
-      return res.redirect("/bots/add");
+      res.locals.token = token;
+      res.locals.statusCheckCommand = statusCheckCommand;
+      return res.render("add-bot", {
+        pageTitle: "Додати нового бота",
+        activePage: "add",
+      });
     }
     const botId = short.generate();
     const fileName = `bot-${botId}.js`;
@@ -354,16 +389,17 @@ router.post("/add", async (req, res, next) => {
   } catch (error) {
     console.error("[Manager] Error adding new bot:", error);
     req.flash("error", `Помилка при додаванні бота: ${error.message}`);
-    req.flash("formToken", token);
-    req.flash("formStatusCommand", statusCheckCommand);
-    return next(error); // Передаємо помилку глобальному обробнику
+    res.locals.token = token;
+    res.locals.statusCheckCommand = statusCheckCommand;
+    return res.status(500).render("add-bot", {
+      pageTitle: "Додати нового бота - Помилка",
+      activePage: "add",
+    });
   }
 });
 
-// ОБРОБНИК для сторінки керування ботом (спільний для обох шляхів)
 const renderManagePage = async (req, res, next) => {
   const botDbId = req.params.id;
-  // Якщо :tab є, беремо його, інакше 'status'
   const activeTab = req.params.tab || "status";
 
   try {
@@ -375,12 +411,9 @@ const renderManagePage = async (req, res, next) => {
 
     const validTabsForThisRoute = ["status", "add-command", "delete-command"];
     if (!validTabsForThisRoute.includes(activeTab)) {
-      // Якщо вкладка недійсна (наприклад, з URL /manage/неіснуюча_вкладка),
-      // перевіряємо, чи це не посилання на окремі сторінки
       if (activeTab === "console") return res.redirect(`/bots/${bot._id}/logs`);
       if (activeTab === "edit-code")
         return res.redirect(`/bots/edit-file/${bot._id}`);
-      // Інакше, перенаправляємо на вкладку 'status'
       return res.redirect(`/bots/${bot._id}/manage/status`);
     }
 
@@ -395,7 +428,7 @@ const renderManagePage = async (req, res, next) => {
       bot,
       activeTab,
       pageTitle,
-      // flash messages та значення форм вже доступні через res.locals
+      activePage: "manage",
     });
   } catch (error) {
     console.error(
@@ -406,13 +439,16 @@ const renderManagePage = async (req, res, next) => {
       "error",
       `Помилка завантаження сторінки керування: ${error.message}`
     );
-    return next(error); // Передаємо помилку глобальному обробнику
+    return res.status(500).render("error", {
+      pageTitle: "Помилка сервера",
+      message: `Помилка завантаження сторінки керування: ${error.message}`,
+      error: process.env.NODE_ENV === "development" ? error : {},
+    });
   }
 };
 
-// НОВИЙ ПІДХІД: Два маршрути, один обробник. Це має усунути помилку з "?"
-router.get("/:id/manage/:tab", renderManagePage); // Коли вкладка чітко вказана
-router.get("/:id/manage", renderManagePage); // Коли вкладка не вказана (буде activeTab = 'status')
+router.get("/:id/manage/:tab", renderManagePage);
+router.get("/:id/manage", renderManagePage);
 
 router.post("/restart/:id", async (req, res, next) => {
   const botDbId = req.params.id;
@@ -431,14 +467,18 @@ router.post("/restart/:id", async (req, res, next) => {
       "stopped",
       "Перезапуск користувачем...",
       null
-    ); // Очистити pinnedError
+    );
     await startBotProcess(bot);
     req.flash("success", `Бот ${bot.botId} перезапускається.`);
     res.redirect(`/bots/${botDbId}/manage/status`);
   } catch (error) {
     console.error(`[Manager] Error restarting bot ${botDbId}:`, error);
     req.flash("error", `Помилка перезапуску бота: ${error.message}`);
-    return next(error);
+    return res.status(500).render("error", {
+      pageTitle: "Помилка сервера",
+      message: `Помилка перезапуску бота: ${error.message}`,
+      error: process.env.NODE_ENV === "development" ? error : {},
+    });
   }
 });
 
@@ -463,11 +503,14 @@ router.post("/delete/:id", async (req, res, next) => {
   } catch (error) {
     console.error(`[Manager] Error deleting bot ${botDbId}:`, error);
     req.flash("error", `Помилка при видаленні бота: ${error.message}`);
-    return next(error);
+    return res.status(500).render("error", {
+      pageTitle: "Помилка сервера",
+      message: `Помилка при видаленні бота: ${error.message}`,
+      error: process.env.NODE_ENV === "development" ? error : {},
+    });
   }
 });
 
-// Цей маршрут обслуговує окрему сторінку для редагування всього коду
 router.get("/edit-file/:id", async (req, res, next) => {
   const botDbId = req.params.id;
   try {
@@ -486,18 +529,18 @@ router.get("/edit-file/:id", async (req, res, next) => {
       fileContent = await fs.readFile(absoluteFilePath, "utf-8");
     }
 
+    const currentFlashError = req.flash("file_edit_error")[0];
+    const combinedError = currentFlashError || fileNotFoundError;
+
     res.render("edit-bot-file", {
       bot,
       fileContent,
       pageTitle: `Редагування коду: ${bot.botId}`,
-      activeTab: "edit-code", // Для підсвічування вкладки, якщо edit-bot-file.ejs має навігацію
-      navBotId: bot._id, // Для посилання "До керування ботом"
-      // Передаємо повідомлення, включаючи специфічну помилку про не знайдений файл
+      activePage: "manage",
+      navBotId: bot._id,
       messages: {
         ...res.locals.messages,
-        file_edit_error:
-          fileNotFoundError ||
-          (res.locals.messages ? res.locals.messages.file_edit_error : null),
+        file_edit_error: combinedError || null,
       },
     });
   } catch (error) {
@@ -506,7 +549,11 @@ router.get("/edit-file/:id", async (req, res, next) => {
       error
     );
     req.flash("error", `Помилка відкриття редактора: ${error.message}`);
-    return next(error);
+    return res.status(500).render("error", {
+      pageTitle: "Помилка сервера",
+      message: `Помилка відкриття редактора: ${error.message}`,
+      error: process.env.NODE_ENV === "development" ? error : {},
+    });
   }
 });
 
@@ -530,17 +577,17 @@ router.post("/edit-file/:id", async (req, res, next) => {
       "stopped",
       "Файл змінено користувачем, перезапуск...",
       null
-    ); // Очистити pinnedError
+    );
     await startBotProcess(bot);
     req.flash(
       "file_edit_success",
       `Файл бота ${bot.botId} збережено. Бот перезапускається.`
     );
-    res.redirect(`/bots/edit-file/${botDbId}`); // Повертаємось на сторінку редагування коду
+    res.redirect(`/bots/edit-file/${botDbId}`);
   } catch (error) {
     console.error(`[Manager] Error saving bot file for ${botDbId}:`, error);
     req.flash("file_edit_error", `Помилка збереження файлу: ${error.message}`);
-    return next(error);
+    res.redirect(`/bots/edit-file/${botDbId}`);
   }
 });
 
@@ -550,8 +597,8 @@ router.post("/add-command/:id", async (req, res, next) => {
 
   if (!newCommandName || !actionCode) {
     req.flash("command_error", "Назва команди та код дії є обов'язковими.");
-    req.flash("formNewCommandName", newCommandName);
-    req.flash("formActionCode", actionCode);
+    res.locals.newCommandName = newCommandName;
+    res.locals.actionCode = actionCode;
     return res.redirect(`/bots/${botDbId}/manage/add-command`);
   }
   newCommandName = newCommandName.trim().replace(/^\//, "");
@@ -561,14 +608,14 @@ router.post("/add-command/:id", async (req, res, next) => {
       "command_error",
       "Назва команди може містити лише літери, цифри та підкреслення."
     );
-    req.flash("formNewCommandName", newCommandName);
-    req.flash("formActionCode", actionCode);
+    res.locals.newCommandName = newCommandName;
+    res.locals.actionCode = actionCode;
     return res.redirect(`/bots/${botDbId}/manage/add-command`);
   }
   if (actionCode.length < 3) {
     req.flash("command_error", "Код дії команди виглядає надто коротким.");
-    req.flash("formNewCommandName", newCommandName);
-    req.flash("formActionCode", actionCode);
+    res.locals.newCommandName = newCommandName;
+    res.locals.actionCode = actionCode;
     return res.redirect(`/bots/${botDbId}/manage/add-command`);
   }
 
@@ -595,7 +642,7 @@ router.post("/add-command/:id", async (req, res, next) => {
     if (markerIndex === -1) {
       req.flash(
         "command_error",
-        "Критична помилка: маркер для додавання команд не знайдено."
+        "Критична помилка: маркер для додавання команд не знайдено у файлі бота. Можливо, файл було змінено вручну. Рекомендується перевірити файл або відредагувати його через повний редактор коду, щоб відновити маркер."
       );
       return res.redirect(`/bots/${botDbId}/manage/add-command`);
     }
@@ -604,13 +651,13 @@ router.post("/add-command/:id", async (req, res, next) => {
 bot.onText(/^\\/${newCommandName}(?:\\s+(.*))?$/, async (msg, match) => {
     const chatId = msg.chat.id;
     const argsText = match && match[1] ? match[1].trim() : null;
-    console.log(\`[${bot.botId}] Command /${newCommandName} received with args: '\${argsText}' from chat \${chatId}\`);
+    console.log(\`[${bot.botId}] Command /${newCommandName} received with args: '\${argsText}' from chat \${chatId}, user: \${msg.from.username || msg.from.id}\`);
     try {
         ${actionCode}
     } catch (e) {
         console.error(\`[${bot.botId}] Error in user-defined action for command /${newCommandName}:\\n\`, e);
         if (bot && typeof bot.sendMessage === 'function') {
-            bot.sendMessage(chatId, 'Вибачте, під час виконання команди "${newCommandName}" сталася внутрішня помилка.').catch(err => console.error(\`[${bot.botId}] Failed to send error message to chat \${chatId}\`, err));
+            bot.sendMessage(chatId, 'Вибачте, під час виконання команди "${newCommandName}" сталася внутрішня помилка. Повідомте адміністратора.').catch(err => console.error(\`[${bot.botId}] Failed to send error message to chat \${chatId}\`, err));
         }
     }
 });
@@ -641,10 +688,13 @@ bot.onText(/^\\/${newCommandName}(?:\\s+(.*))?$/, async (msg, match) => {
     res.redirect(`/bots/${botDbId}/manage/add-command`);
   } catch (error) {
     console.error(`[Manager] Error adding command to bot ${botDbId}:`, error);
-    req.flash("command_error", `Помилка сервера: ${error.message}`);
-    req.flash("formNewCommandName", newCommandName);
-    req.flash("formActionCode", actionCode);
-    return next(error);
+    req.flash(
+      "command_error",
+      `Помилка сервера при додаванні команди: ${error.message}`
+    );
+    res.locals.newCommandName = newCommandName;
+    res.locals.actionCode = actionCode;
+    res.redirect(`/bots/${botDbId}/manage/add-command`);
   }
 });
 
@@ -665,7 +715,7 @@ router.post("/delete-command/:id", async (req, res, next) => {
       "command_delete_error",
       "Назва команди може містити лише літери, цифри та підкреслення."
     );
-    req.flash("formCommandNameToDelete", commandNameToDelete);
+    res.locals.commandNameToDeleteValue = commandNameToDelete;
     return res.redirect(`/bots/${botDbId}/manage/delete-command`);
   }
 
@@ -691,33 +741,23 @@ router.post("/delete-command/:id", async (req, res, next) => {
       /[.*+?^${}()|[\]\\]/g,
       "\\$&"
     );
-    const specificCommandBlockRegex = new RegExp(
+    const commandBlockRegex = new RegExp(
       `// BOT_COMMAND_HANDLER: /${escapedCommandName}\\r?\\n` +
-        `bot\\.onText\\(/\\^\\\\\\/${escapedCommandName}\\(?:\\\\s\\+\\(\\.\\*\\)\\)\\?\\$\\/, async \\(msg, match\\) => \\{[\\s\\S]*?\\}\\);[\\s\\r\\n]*`,
+        `bot\\.onText\\(/^\\\\\\/${escapedCommandName}(?:\\\\s\\+\\(\\.\\*\\)\\?\\$\\/, async \\(msg, match\\) => \\{[\\s\\S]*?\\}\\);[\\s\\r\\n]*`,
       "gm"
     );
-    const genericCommandBlockRegex = new RegExp(
-      `// BOT_COMMAND_HANDLER: /${escapedCommandName}\\s*\\r?\\n` +
-        `bot\\.onText\\(\\s*\\/[^\\r\\n]*${escapedCommandName}[^\\r\\n]*\\/[gimy]{0,4}\\s*,\\s*async\\s*\\(msg,\\s*match\\)\\s*=>\\s*\\{[\\s\\S]*?\\}\\);[\\s\\r\\n]*`,
-      "gm"
-    );
-    let updatedFileContent = currentFileContent.replace(
-      specificCommandBlockRegex,
+
+    const updatedFileContent = currentFileContent.replace(
+      commandBlockRegex,
       ""
     );
-    if (currentFileContent === updatedFileContent) {
-      updatedFileContent = currentFileContent.replace(
-        genericCommandBlockRegex,
-        ""
-      );
-    }
 
     if (currentFileContent === updatedFileContent) {
       req.flash(
         "command_delete_error",
-        `Команду \`/${commandNameToDelete}\` не знайдено або її структура не стандартна.`
+        `Команду \`/${commandNameToDelete}\` не знайдено у стандартному форматі, згенерованому менеджером. Можливо, її було змінено вручну або вона не існує.`
       );
-      req.flash("formCommandNameToDelete", commandNameToDelete);
+      res.locals.commandNameToDeleteValue = commandNameToDelete;
       return res.redirect(`/bots/${botDbId}/manage/delete-command`);
     }
 
@@ -745,13 +785,15 @@ router.post("/delete-command/:id", async (req, res, next) => {
       `[Manager] Error deleting command for bot ${botDbId}:`,
       error
     );
-    req.flash("command_delete_error", `Помилка сервера: ${error.message}`);
-    req.flash("formCommandNameToDelete", commandNameToDelete);
-    return next(error);
+    req.flash(
+      "command_delete_error",
+      `Помилка сервера при видаленні команди: ${error.message}`
+    );
+    res.locals.commandNameToDeleteValue = commandNameToDelete;
+    res.redirect(`/bots/${botDbId}/manage/delete-command`);
   }
 });
 
-// Цей маршрут обслуговує окрему сторінку для логів
 router.get("/:id/logs", async (req, res, next) => {
   const botDbId = req.params.id;
   try {
@@ -763,8 +805,8 @@ router.get("/:id/logs", async (req, res, next) => {
     res.render("bot-logs", {
       bot,
       pageTitle: `Логи та консоль: ${bot.botId}`,
-      activeTab: "console", // Для підсвічування вкладки, якщо bot-logs.ejs має навігацію
-      navBotId: bot._id, // Для посилання "До керування ботом"
+      activePage: "manage",
+      navBotId: bot._id,
     });
   } catch (error) {
     console.error(
@@ -772,7 +814,11 @@ router.get("/:id/logs", async (req, res, next) => {
       error
     );
     req.flash("error", "Помилка при відкритті сторінки логів.");
-    return next(error);
+    return res.status(500).render("error", {
+      pageTitle: "Помилка сервера",
+      message: "Помилка при відкритті сторінки логів.",
+      error: process.env.NODE_ENV === "development" ? error : {},
+    });
   }
 });
 
@@ -782,14 +828,12 @@ router.get("/api/:id/logs-content", async (req, res) => {
   try {
     const bot = await Bot.findById(botDbId).lean();
     if (!bot) {
-      return res
-        .status(404)
-        .json({
-          error: "Бота не знайдено.",
-          logs: "",
-          pinnedError: "Бота не знайдено в БД.",
-          lastPinnedErrorTime: null,
-        });
+      return res.status(404).json({
+        error: "Бота не знайдено.",
+        logs: "",
+        pinnedError: "Бота не знайдено в БД.",
+        lastPinnedErrorTime: null,
+      });
     }
     const logFilePath = path.join(LOGS_DIR, `logs-${bot.botId}.txt`);
     let logContent = "";
@@ -832,37 +876,270 @@ router.get("/api/:id/logs-content", async (req, res) => {
       `[API] Error fetching log content for bot ${botDbId}:`,
       error
     );
-    res
-      .status(500)
-      .json({
-        error: "Помилка сервера при завантаженні логів.",
-        logs: "Помилка завантаження логів.",
-        pinnedError: "Серверна помилка",
-        lastPinnedErrorTime: null,
-      });
+    res.status(500).json({
+      error: "Помилка сервера при завантаженні логів.",
+      logs: "Помилка завантаження логів.",
+      pinnedError: "Серверна помилка",
+      lastPinnedErrorTime: new Date(),
+    });
   }
 });
+
+router.get("/api/:id/stats/unique-users", async (req, res) => {
+  const botDbId = req.params.id;
+  try {
+    const bot = await Bot.findById(botDbId).lean();
+    if (!bot) {
+      return res.status(404).json({ error: "Бота не знайдено." });
+    }
+
+    const logFilePath = path.join(LOGS_DIR, `logs-${bot.botId}.txt`);
+    if (!(await fs.pathExists(logFilePath))) {
+      return res.json({ uniqueUsers: 0, message: "Лог-файл не знайдено." });
+    }
+
+    const uniqueChatIds = new Set();
+    const escapedBotId = bot.botId.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const chatIdRegex = new RegExp(
+      `\\[${escapedBotId}\\] Interaction:.*?chatId:\\s*(\\d+)`,
+      "g"
+    );
+
+    const fileStream = fs.createReadStream(logFilePath);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+
+    for await (const line of rl) {
+      let match;
+      while ((match = chatIdRegex.exec(line)) !== null) {
+        if (match[1]) {
+          uniqueChatIds.add(match[1]);
+        }
+      }
+    }
+
+    res.json({ uniqueUsers: uniqueChatIds.size });
+  } catch (error) {
+    console.error(`[API /stats/unique-users] Error for bot ${botDbId}:`, error);
+    res.status(500).json({
+      error: "Помилка сервера при підрахунку унікальних користувачів.",
+      uniqueUsers: "N/A",
+    });
+  }
+});
+
+router.get("/api/:id/stats/command-usage", async (req, res) => {
+  const botDbId = req.params.id;
+  try {
+    const bot = await Bot.findById(botDbId).lean();
+    if (!bot) {
+      return res.status(404).json({ error: "Бота не знайдено." });
+    }
+
+    const logFilePath = path.join(LOGS_DIR, `logs-${bot.botId}.txt`);
+    if (!(await fs.pathExists(logFilePath))) {
+      return res.json({ commandUsage: [], message: "Лог-файл не знайдено." });
+    }
+
+    const commandCounts = {};
+    const escapedBotId = bot.botId.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const commandLogRegex = new RegExp(
+      `\\[${escapedBotId}\\] Command (\\/[a-zA-Z0-9_]+) received`,
+      "g"
+    );
+
+    const fileStream = fs.createReadStream(logFilePath);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+
+    for await (const line of rl) {
+      let match;
+      while ((match = commandLogRegex.exec(line)) !== null) {
+        if (match[1]) {
+          const commandName = match[1];
+          commandCounts[commandName] = (commandCounts[commandName] || 0) + 1;
+        }
+      }
+    }
+
+    const commandUsageArray = Object.entries(commandCounts)
+      .map(([command, count]) => ({ command, count }))
+      .sort((a, b) => b.count - a.count);
+
+    res.json({ commandUsage: commandUsageArray });
+  } catch (error) {
+    console.error(
+      `[API /stats/command-usage] Error for bot ${botDbId}:`,
+      error
+    );
+    res.status(500).json({
+      error: "Помилка сервера при підрахунку використання команд.",
+      commandUsage: [],
+    });
+  }
+});
+
+// >>> NEW API ENDPOINT FOR ERROR SUMMARY STATS <<<
+router.get("/api/:id/stats/error-summary", async (req, res) => {
+  const botDbId = req.params.id;
+  try {
+    const bot = await Bot.findById(botDbId).lean();
+    if (!bot) {
+      return res.status(404).json({ error: "Бота не знайдено." });
+    }
+
+    const logFilePath = path.join(LOGS_DIR, `logs-${bot.botId}.txt`);
+    if (!(await fs.pathExists(logFilePath))) {
+      return res.json({ errorSummary: [], message: "Лог-файл не знайдено." });
+    }
+
+    const errorCounts = {};
+    // Keywords/phrases to identify different types of errors from logs
+    // We will capture the keyword and a short snippet of the error message
+    const errorPatterns = [
+      {
+        keyword: "[CRITICAL_FORK_ERROR]",
+        regex: new RegExp(
+          `\\[${bot.botId.replace(
+            /[-\/\\^$*+?.()|[\]{}]/g,
+            "\\$&"
+          )}\\] .*?\\[CRITICAL_FORK_ERROR\\] (Критична помилка в процесі бота:.*?)(?: at|$)`,
+          "i"
+        ),
+      },
+      {
+        keyword: "[UNEXPECTED_EXIT_ERROR]",
+        regex: new RegExp(
+          `\\[${bot.botId.replace(
+            /[-\/\\^$*+?.()|[\]{}]/g,
+            "\\$&"
+          )}\\] .*?\\[UNEXPECTED_EXIT_ERROR\\] (Бот несподівано зупинився.*?)(?: at|$)`,
+          "i"
+        ),
+      },
+      {
+        keyword: "[BOT_REPORTED_ERROR_VIA_IPC]",
+        regex: new RegExp(
+          `\\[${bot.botId.replace(
+            /[-\/\\^$*+?.()|[\]{}]/g,
+            "\\$&"
+          )}\\] .*?\\[BOT_REPORTED_ERROR_VIA_IPC\\] (.*?)(?: at|$)`,
+          "i"
+        ),
+      },
+      {
+        // General polling error from bot-template
+        keyword: "Polling error",
+        regex: new RegExp(
+          `\\[${bot.botId.replace(
+            /[-\/\\^$*+?.()|[\]{}]/g,
+            "\\$&"
+          )}\\] Polling error: (.*?)(?: -|$)`,
+          "i"
+        ),
+      },
+      {
+        // General error from bot-template
+        keyword: "General error",
+        regex: new RegExp(
+          `\\[${bot.botId.replace(
+            /[-\/\\^$*+?.()|[\]{}]/g,
+            "\\$&"
+          )}\\] General error: (.*?)(?: at \\w|$)`,
+          "i"
+        ), // Try to get first part of error
+      },
+      {
+        // User-defined command error from bot-template
+        keyword: "Error in user-defined action",
+        regex: new RegExp(
+          `\\[${bot.botId.replace(
+            /[-\/\\^$*+?.()|[\]{}]/g,
+            "\\$&"
+          )}\\] Error in user-defined action for command (\\/\\w+):\\s*([\\s\\S]*?)(?=\\n\\s*\\[|$)`,
+          "im"
+        ), // Capture command and error message
+      },
+      {
+        // Generic [ERR] lines from bot's stderr
+        keyword: "[ERR]",
+        regex: new RegExp(`^\\[ERR\\] (.*)`, "i"), // Assumes [ERR] is at the start of the line from stderr
+      },
+    ];
+
+    const fileStream = fs.createReadStream(logFilePath);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+
+    for await (const line of rl) {
+      for (const pattern of errorPatterns) {
+        const match = pattern.regex.exec(line);
+        if (match) {
+          let errorMessage;
+          if (pattern.keyword === "Error in user-defined action" && match[2]) {
+            // For user-defined action, try to get a cleaner error message if possible.
+            // match[2] can be a multi-line stack trace. We take the first line or a snippet.
+            const firstErrorLine = match[2]
+              .split("\n")[0]
+              .trim()
+              .substring(0, 100);
+            errorMessage = `Помилка в команді ${match[1]}: ${firstErrorLine}...`;
+          } else {
+            errorMessage = match[1]
+              ? match[1].trim().substring(0, 150)
+              : pattern.keyword; // Max 150 chars for the message
+            if (match[1] && match[1].length > 150) errorMessage += "...";
+          }
+
+          const errorKey = `${pattern.keyword} - ${errorMessage}`; // Group by keyword and message snippet
+          errorCounts[errorKey] = (errorCounts[errorKey] || 0) + 1;
+          break; // Count only the first matching pattern per line
+        }
+      }
+    }
+
+    const errorSummaryArray = Object.entries(errorCounts)
+      .map(([error, count]) => ({ error, count }))
+      .sort((a, b) => b.count - a.count);
+
+    res.json({ errorSummary: errorSummaryArray });
+  } catch (error) {
+    console.error(
+      `[API /stats/error-summary] Error for bot ${botDbId}:`,
+      error
+    );
+    res.status(500).json({
+      error: "Помилка сервера при підрахунку помилок.",
+      errorSummary: [],
+    });
+  }
+});
+// >>> END NEW API ENDPOINT <<<
 
 router.get("/process-status/:dbId", async (req, res) => {
   const botDbId = req.params.dbId;
   try {
     const botData = await Bot.findById(botDbId).lean();
     if (!botData) {
-      return res
-        .status(404)
-        .json({
-          status: "not_found_db",
-          message: "Бот не знайдений в БД.",
-          dbStatus: "unknown",
-          pinnedError: null,
-          lastMessageFromDB: null,
-        });
+      return res.status(404).json({
+        status: "not_found_db",
+        message: "Бот не знайдений в БД.",
+        dbStatus: "unknown",
+        pinnedError: null,
+        lastMessageFromDB: null,
+      });
     }
     const childProcess = runningBotProcesses[botData._id.toString()];
     let processActualStatus = "unknown";
     let message = `Статус процесу не визначено. Статус в БД: ${botData.status}.`;
 
-    if (childProcess && childProcess.connected) {
+    if (childProcess && childProcess.connected && !childProcess.killed) {
       processActualStatus =
         botData.status === "starting" ? "starting" : "running";
       message = `Процес ${
@@ -895,15 +1172,13 @@ router.get("/process-status/:dbId", async (req, res) => {
       `[API] Error fetching process status for bot ${botDbId}:`,
       error
     );
-    res
-      .status(500)
-      .json({
-        status: "error_server",
-        message: "Помилка сервера.",
-        dbStatus: "unknown",
-        pinnedError: null,
-        lastMessageFromDB: null,
-      });
+    res.status(500).json({
+      status: "error_server",
+      message: "Помилка сервера.",
+      dbStatus: "unknown",
+      pinnedError: "Серверна помилка",
+      lastMessageFromDB: null,
+    });
   }
 });
 
@@ -916,7 +1191,6 @@ router.post("/api/:id/start", async (req, res) => {
         .status(404)
         .json({ success: false, message: "Бота не знайдено." });
     }
-
     await updateBotStatusAndError(
       bot.botId,
       "starting",
@@ -932,19 +1206,12 @@ router.post("/api/:id/start", async (req, res) => {
   } catch (error) {
     console.error(`[API /start] Error starting bot ${botDbId}:`, error);
     const botForErrorUpdate = await Bot.findById(botDbId);
-    if (botForErrorUpdate && !botForErrorUpdate.pinnedError) {
+    if (botForErrorUpdate) {
       await updateBotStatusAndError(
         botForErrorUpdate.botId,
         "error",
         `Помилка запуску через API: ${error.message}`,
         `Помилка запуску: ${error.message}`
-      );
-    } else if (botForErrorUpdate) {
-      await updateBotStatusAndError(
-        botForErrorUpdate.botId,
-        "error",
-        `Помилка запуску через API: ${error.message}`,
-        botForErrorUpdate.pinnedError
       );
     }
     res
@@ -985,6 +1252,72 @@ router.post("/api/:id/stop", async (req, res) => {
   }
 });
 
+router.post("/api/:id/send_message_to_bot", async (req, res) => {
+  const botDbId = req.params.id;
+  const { messageText } = req.body;
+
+  if (!messageText) {
+    return res.status(400).json({
+      success: false,
+      message: "Текст повідомлення не може бути порожнім.",
+    });
+  }
+
+  try {
+    const botData = await Bot.findById(botDbId);
+    if (!botData) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Бота не знайдено." });
+    }
+
+    const childProcess = runningBotProcesses[botData._id.toString()];
+    if (childProcess && childProcess.connected && !childProcess.killed) {
+      if (typeof childProcess.send === "function") {
+        childProcess.send({
+          type: "manager_message",
+          text: messageText,
+          botId: botData.botId,
+        });
+        console.log(
+          `[API /send_message_to_bot] Sent message "${messageText.substring(
+            0,
+            30
+          )}..." to bot ${botData.botId} via IPC.`
+        );
+        return res.json({
+          success: true,
+          message:
+            "Повідомлення надіслано боту для обробки. Перевірте логи бота.",
+        });
+      } else {
+        console.error(
+          `[API /send_message_to_bot] Bot process ${botData.botId} does not have a send method.`
+        );
+        return res.status(500).json({
+          success: false,
+          message:
+            "Не вдалося надіслати повідомлення: процес бота не підтримує IPC належним чином.",
+        });
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Бот не запущений або не відповідає. Неможливо надіслати повідомлення.",
+      });
+    }
+  } catch (error) {
+    console.error(
+      `[API /send_message_to_bot] Error sending message to bot ${botDbId}:`,
+      error
+    );
+    return res
+      .status(500)
+      .json({ success: false, message: `Помилка сервера: ${error.message}` });
+  }
+});
+
 async function initializeBotsOnStartup() {
   console.log("[Manager] Initializing bots on application startup...");
   try {
@@ -994,9 +1327,11 @@ async function initializeBotsOnStartup() {
       return;
     }
     for (const bot of botsToConsider) {
+      const botDbIdString = bot._id.toString();
       const processExists =
-        runningBotProcesses[bot._id.toString()] &&
-        runningBotProcesses[bot._id.toString()].connected;
+        runningBotProcesses[botDbIdString] &&
+        runningBotProcesses[botDbIdString].connected &&
+        !runningBotProcesses[botDbIdString].killed;
 
       if (processExists) {
         console.log(
@@ -1020,6 +1355,10 @@ async function initializeBotsOnStartup() {
             `[Manager Startup] Attempting to start bot ${bot.botId} (DB status: ${bot.status}).`
           );
           await startBotProcess(bot);
+        } else {
+          console.log(
+            `[Manager Startup] Bot ${bot.botId} is in DB as '${bot.status}', not auto-starting.`
+          );
         }
       } else {
         const errMsg = `Файл бота ${bot.filePath} для ${bot.botId} не знайдено під час ініціалізації.`;

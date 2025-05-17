@@ -53,6 +53,22 @@ bot.onText(/^\/job(?:\s+(.*))?$/, async (msg, match) => {
 
 
 
+
+// BOT_COMMAND_HANDLER: /hi
+bot.onText(/^\/hi(?:\s+(.*))?$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const argsText = match && match[1] ? match[1].trim() : null;
+    console.log(`[rZozFkkVuAutv9d72WsxP2] Command /hi received with args: '${argsText}' from chat ${chatId}, user: ${msg.from.username || msg.from.id}`);
+    try {
+        bot.sendMessage(chatId, `Ваш ID: ${msg.from.id}`);
+    } catch (e) {
+        console.error(`[rZozFkkVuAutv9d72WsxP2] Error in user-defined action for command /hi:\n`, e);
+        if (bot && typeof bot.sendMessage === 'function') {
+            bot.sendMessage(chatId, 'Вибачте, під час виконання команди "hi" сталася внутрішня помилка. Повідомте адміністратора.').catch(err => console.error(`[rZozFkkVuAutv9d72WsxP2] Failed to send error message to chat ${chatId}`, err));
+        }
+    }
+});
+
 // MARKER_FOR_NEW_COMMANDS (Не видаляйте і не змінюйте цей рядок!)
 // <--- КІНЕЦЬ МАРКЕРА ДЛЯ НОВИХ КОМАНД --->
 

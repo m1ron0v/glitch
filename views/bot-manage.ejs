@@ -10,7 +10,8 @@
     <%# Навігація по вкладках (Bootstrap Navs) %>
     <ul class="nav nav-tabs mb-4" id="botManageTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <a class="nav-link <%= activeTab === 'status' ? 'active' : '' %>" href="/bots/<%= bot._id %>/manage/status">
+            <a class="nav-link <%= activeTab === 'status' ? 'active' 
+            : '' %>" href="/bots/<%= bot._id %>/manage/status">
                 <i class="fas fa-tachometer-alt me-1"></i>Статус
             </a>
         </li>
@@ -20,17 +21,20 @@
             </a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link <%= activeTab === 'delete-command' ? 'active' : '' %>" href="/bots/<%= bot._id %>/manage/delete-command">
+            <a class="nav-link <%= activeTab === 'delete-command' ?
+            'active' : '' %>" href="/bots/<%= bot._id %>/manage/delete-command">
                 <i class="fas fa-trash-alt me-1"></i>Видалити команду
             </a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link <%= activeTab === 'console' ? 'active' : '' %>" href="/bots/<%= bot._id %>/logs">
+            <a class="nav-link <%= activeTab === 'console' ?
+            'active' : '' %>" href="/bots/<%= bot._id %>/logs">
                 <i class="fas fa-terminal me-1"></i>Консоль та Логи
             </a>
         </li>
          <li class="nav-item" role="presentation">
-            <a class="nav-link <%= activeTab === 'edit-code' ? 'active' : '' %>" href="/bots/edit-file/<%= bot._id %>">
+            <a class="nav-link <%= activeTab === 'edit-code' ?
+            'active' : '' %>" href="/bots/edit-file/<%= bot._id %>">
                 <i class="fas fa-code me-1"></i>Редагувати весь код
             </a>
         </li>
@@ -40,15 +44,16 @@
 
         <%# ВКЛАДКА: СТАТУС %>
         <% if (activeTab === 'status') { %>
-            <div class="tab-pane fade show active" id="status-content" role="tabpanel">
-                <div class="card shadow-sm">
+            <div class="tab-pane fade show active" id="status-content" 
+            role="tabpanel">
+                <div class="card shadow-sm mb-4">
                     <div class="card-header">
                         <i class="fas fa-power-off me-1"></i>Пульт керування та інформація
                     </div>
                     <div class="card-body">
-                        <% if (locals.messages && locals.messages.error) { %> <div class="alert alert-danger alert-dismissible fade show"><%= locals.messages.error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
-                        <% if (locals.messages && locals.messages.success) { %> <div class="alert alert-success alert-dismissible fade show"><%= locals.messages.success %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
-                        
+                        <% if (locals.messages && locals.messages.error) { %><div class="alert alert-danger alert-dismissible fade show"><%= locals.messages.error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+                        <% if (locals.messages && locals.messages.success) { %><div class="alert alert-success alert-dismissible fade show"><%= locals.messages.success %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+    
                         <div class="row">
                             <div class="col-lg-4 col-md-6 mb-3">
                                 <h5 class="card-title"><i class="fas fa-toggle-on me-1"></i>Дії з ботом</h5>
@@ -64,10 +69,22 @@
                             <div class="col-lg-4 col-md-6 mb-3">
                                 <h5 class="card-title"><i class="fas fa-clock me-1"></i>Час сервера</h5>
                                 <p id="server-time" class="fs-5 fw-light"></p>
+                                
                                 <h5 class="card-title mt-3"><i class="fas fa-info-circle me-1"></i>ID Бота</h5>
                                 <p><code class="p-1 bg-light rounded"><%= bot.botId %></code></p>
+
+                                <h5 class="card-title mt-3"><i class="fas fa-users me-1"></i>Унікальні користувачі (чати)</h5>
+                                <p id="unique-users-count" class="fs-5 fw-light">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    Завантаження...
+                                </p>
+                                <button class="btn btn-sm btn-outline-secondary mt-1" id="refreshUniqueUsersBtn" title="Оновити кількість унікальних користувачів">
+                                    <i class="fas fa-sync-alt"></i> Оновити
+                                </button>
+                                <div id="unique-users-feedback" class="mt-1 small text-muted"></div>
                             </div>
-                             <div class="col-lg-4 col-md-12 mb-3">
+                            
+                            <div class="col-lg-4 col-md-12 mb-3">
                                 <h5 class="card-title"><i class="fas fa-bug me-1"></i>Закріплена помилка</h5>
                                 <% if (bot.pinnedError) { %>
                                     <div class="alert alert-danger small p-2">
@@ -99,13 +116,55 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="row"> <Deck
+                    <div class="col-md-6 mb-4"> <%# Command Usage Card %>
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header">
+                                <i class="fas fa-chart-bar me-1"></i>Статистика використання команд
+                            </div>
+                            <div class="card-body">
+                                <div id="command-usage-stats" style="max-height: 300px; overflow-y: auto;">
+                                    <p class="text-center">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        Завантаження статистики...
+                                    </p>
+                                </div>
+                                <button class="btn btn-sm btn-outline-secondary mt-2" id="refreshCommandStatsBtn" title="Оновити статистику команд">
+                                    <i class="fas fa-sync-alt"></i> Оновити
+                                </button>
+                                <div id="command-stats-feedback" class="mt-1 small text-muted"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4"> <%# Error Summary Card %>
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header">
+                                <i class="fas fa-exclamation-circle me-1"></i>Зведена статистика помилок
+                            </div>
+                            <div class="card-body">
+                                <div id="error-summary-stats" style="max-height: 300px; overflow-y: auto;">
+                                    <p class="text-center">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        Завантаження статистики...
+                                    </p>
+                                </div>
+                                <button class="btn btn-sm btn-outline-secondary mt-2" id="refreshErrorSummaryBtn" title="Оновити статистику помилок">
+                                    <i class="fas fa-sync-alt"></i> Оновити
+                                </button>
+                                <div id="error-summary-feedback" class="mt-1 small text-muted"></div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
             </div>
         <% } %>
 
         <%# ВКЛАДКА: ДОДАТИ КОМАНДУ %>
         <% if (activeTab === 'add-command') { %>
             <div class="tab-pane fade show active" id="add-command-content" role="tabpanel">
-                 <div class="card shadow-sm">
+                <div class="card shadow-sm">
                     <div class="card-header bg-success text-white">
                         <h3 class="card-title mb-0"><i class="fas fa-plus-circle me-1"></i>Додати нову команду</h3>
                     </div>
@@ -123,7 +182,8 @@
                                 <textarea class="form-control code-textarea" id="actionCode" name="actionCode" rows="8" required placeholder="bot.sendMessage(chatId, 'Привіт!');"><%= locals.actionCode || '' %></textarea>
                                 <div class="form-text">
                                     Цей код буде виконано, коли користувач надішле команду.
-                                    Доступні змінні: <code>msg</code>, <code>chatId</code>, <code>match</code>.
+                                    Доступні змінні: 
+                                    <code>msg</code>, <code>chatId</code>, <code>match</code>.
                                     <br><strong>Приклад:</strong> <code>bot.sendMessage(chatId, `Ваш ID: ${msg.from.id}`);</code>
                                 </div>
                             </div>
@@ -178,7 +238,23 @@
     const processStatusMessage = document.getElementById('process-status-message');
     const actionFeedback = document.getElementById('action-feedback');
 
+    const uniqueUsersCountElem = document.getElementById('unique-users-count');
+    const refreshUniqueUsersBtn = document.getElementById('refreshUniqueUsersBtn');
+    const uniqueUsersFeedbackElem = document.getElementById('unique-users-feedback');
+
+    const commandUsageStatsElem = document.getElementById('command-usage-stats');
+    const refreshCommandStatsBtn = document.getElementById('refreshCommandStatsBtn');
+    const commandStatsFeedbackElem = document.getElementById('command-stats-feedback');
+
+    // >>> NEW: Elements for Error Summary Stats <<<
+    const errorSummaryStatsElem = document.getElementById('error-summary-stats');
+    const refreshErrorSummaryBtn = document.getElementById('refreshErrorSummaryBtn');
+    const errorSummaryFeedbackElem = document.getElementById('error-summary-feedback');
+    // >>> END NEW <<<
+
+
     function mapDbStatusToBadgeClass(status) {
+        // ... (існуючий код)
         if (status === 'running') return 'bg-success';
         if (status === 'stopped') return 'bg-secondary';
         if (status === 'error') return 'bg-danger';
@@ -188,13 +264,12 @@
     if(dbStatusBadge) dbStatusBadge.className = 'badge fs-6 ' + mapDbStatusToBadgeClass('<%= bot.status %>');
 
     async function fetchBotRealtimeStatus(showLoading = true) {
+        // ... (існуючий код)
         if(showLoading && processStatusBadge) {
             processStatusBadge.textContent = 'Оновлення...';
             processStatusBadge.className = 'badge fs-6 bg-info text-dark';
         }
         if(showLoading && processStatusMessage) processStatusMessage.textContent = 'Запит статусу...';
-
-
         try {
             const response = await fetch(`/bots/process-status/${botDbIdForStatus}`);
             if (!response.ok) {
@@ -206,7 +281,6 @@
                 return;
             }
             const data = await response.json();
-
             let processBadgeClass = 'bg-secondary';
             let processBadgeText = data.status ? data.status.toUpperCase().replace("_", " ") : 'НЕВІДОМО';
             if (data.status === 'running') processBadgeClass = 'bg-success';
@@ -240,11 +314,144 @@
         }
     }
     
-    if(document.getElementById('status-content')) { // Run only if on status tab
+    async function fetchUniqueUsers() {
+        // ... (існуючий код)
+        if (!uniqueUsersCountElem || !botDbIdForStatus) return;
+
+        uniqueUsersCountElem.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Завантаження...';
+        if (uniqueUsersFeedbackElem) uniqueUsersFeedbackElem.textContent = '';
+        if (refreshUniqueUsersBtn) refreshUniqueUsersBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/bots/api/${botDbIdForStatus}/stats/unique-users`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `HTTP помилка ${response.status}`}));
+                throw new Error(errorData.error || `Помилка сервера: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.uniqueUsers !== undefined) {
+                uniqueUsersCountElem.textContent = data.uniqueUsers;
+                 if (uniqueUsersFeedbackElem && data.message) uniqueUsersFeedbackElem.textContent = data.message;
+            } else {
+                throw new Error(data.error || 'Невідома помилка формату відповіді');
+            }
+        } catch (error) {
+            console.error('Error fetching unique users:', error);
+            uniqueUsersCountElem.textContent = 'Помилка';
+            if (uniqueUsersFeedbackElem) uniqueUsersFeedbackElem.textContent = error.message;
+        } finally {
+            if (refreshUniqueUsersBtn) refreshUniqueUsersBtn.disabled = false;
+        }
+    }
+
+    async function fetchCommandUsageStats() {
+        // ... (існуючий код)
+        if (!commandUsageStatsElem || !botDbIdForStatus) return;
+
+        commandUsageStatsElem.innerHTML = '<p class="text-center"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Завантаження статистики...</p>';
+        if (commandStatsFeedbackElem) commandStatsFeedbackElem.textContent = '';
+        if (refreshCommandStatsBtn) refreshCommandStatsBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/bots/api/${botDbIdForStatus}/stats/command-usage`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `HTTP помилка ${response.status}`}));
+                throw new Error(errorData.error || `Помилка сервера: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            if (data.commandUsage && Array.isArray(data.commandUsage)) {
+                if (data.commandUsage.length === 0) {
+                    commandUsageStatsElem.innerHTML = '<p class="text-muted text-center">Статистика по командах відсутня або логи ще не містять викликів команд.</p>';
+                     if (commandStatsFeedbackElem && data.message) commandStatsFeedbackElem.textContent = data.message;
+                } else {
+                    let html = '<ul class="list-group list-group-flush">';
+                    data.commandUsage.forEach(item => {
+                        html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <code>${item.command}</code>
+                                    <span class="badge bg-primary rounded-pill">${item.count}</span>
+                                 </li>`;
+                    });
+                    html += '</ul>';
+                    commandUsageStatsElem.innerHTML = html;
+                }
+            } else {
+                throw new Error(data.error || 'Невідома помилка формату відповіді для статистики команд');
+            }
+        } catch (error) {
+            console.error('Error fetching command usage stats:', error);
+            commandUsageStatsElem.innerHTML = '<p class="text-danger text-center">Помилка завантаження статистики команд.</p>';
+            if (commandStatsFeedbackElem) commandStatsFeedbackElem.textContent = error.message;
+        } finally {
+            if (refreshCommandStatsBtn) refreshCommandStatsBtn.disabled = false;
+        }
+    }
+
+    // >>> NEW: Function to fetch error summary stats <<<
+    async function fetchErrorSummaryStats() {
+        if (!errorSummaryStatsElem || !botDbIdForStatus) return;
+
+        errorSummaryStatsElem.innerHTML = '<p class="text-center"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Завантаження статистики...</p>';
+        if (errorSummaryFeedbackElem) errorSummaryFeedbackElem.textContent = '';
+        if (refreshErrorSummaryBtn) refreshErrorSummaryBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/bots/api/${botDbIdForStatus}/stats/error-summary`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `HTTP помилка ${response.status}`}));
+                throw new Error(errorData.error || `Помилка сервера: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            if (data.errorSummary && Array.isArray(data.errorSummary)) {
+                if (data.errorSummary.length === 0) {
+                    errorSummaryStatsElem.innerHTML = '<p class="text-success text-center"><i class="fas fa-check-circle"></i> Помилок в логах не знайдено (або логи ще не містять помилок).</p>';
+                     if (errorSummaryFeedbackElem && data.message) errorSummaryFeedbackElem.textContent = data.message;
+                } else {
+                    let html = '<ul class="list-group list-group-flush">';
+                    data.errorSummary.forEach(item => {
+                        // Using a smaller font for error messages to fit more text if needed
+                        html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span class="text-danger small" title="${item.error}">${item.error.length > 70 ? item.error.substring(0, 67) + '...' : item.error}</span>
+                                    <span class="badge bg-danger rounded-pill">${item.count}</span>
+                                 </li>`;
+                    });
+                    html += '</ul>';
+                    errorSummaryStatsElem.innerHTML = html;
+                }
+            } else {
+                throw new Error(data.error || 'Невідома помилка формату відповіді для статистики помилок');
+            }
+        } catch (error) {
+            console.error('Error fetching error summary stats:', error);
+            errorSummaryStatsElem.innerHTML = '<p class="text-danger text-center">Помилка завантаження статистики помилок.</p>';
+            if (errorSummaryFeedbackElem) errorSummaryFeedbackElem.textContent = error.message;
+        } finally {
+            if (refreshErrorSummaryBtn) refreshErrorSummaryBtn.disabled = false;
+        }
+    }
+    // >>> END NEW <<<
+
+    if(document.getElementById('status-content')) { 
         fetchBotRealtimeStatus();
-        setInterval(() => fetchBotRealtimeStatus(false), 7000); // Оновлювати кожні 7 секунд, без повного індикатора завантаження
+        setInterval(() => fetchBotRealtimeStatus(false), 7000); 
+        fetchUniqueUsers(); 
+        fetchCommandUsageStats(); 
+        fetchErrorSummaryStats(); // >>> NEW: Fetch error summary on load <<<
     }
     
+    if (refreshUniqueUsersBtn) {
+        refreshUniqueUsersBtn.addEventListener('click', fetchUniqueUsers);
+    }
+    if (refreshCommandStatsBtn) {
+        refreshCommandStatsBtn.addEventListener('click', fetchCommandUsageStats);
+    }
+
+    // >>> NEW: Event listener for refresh error summary button <<<
+    if (refreshErrorSummaryBtn) {
+        refreshErrorSummaryBtn.addEventListener('click', fetchErrorSummaryStats);
+    }
+    // >>> END NEW <<<
 
     document.querySelectorAll('.bot-action-btn').forEach(button => {
         button.addEventListener('click', async function() {
@@ -260,7 +467,10 @@
                 
                 if (result.success) {
                     if(actionFeedback) actionFeedback.innerHTML = `<div class="text-success"><i class="fas fa-check-circle"></i> Команда ${action.toUpperCase()} виконана: ${result.message}</div>`;
-                    setTimeout(() => fetchBotRealtimeStatus(false), 1500);
+                    setTimeout(() => fetchBotRealtimeStatus(true), 1500); 
+                    setTimeout(() => fetchUniqueUsers(), 1800); 
+                    setTimeout(() => fetchCommandUsageStats(), 2100); 
+                    setTimeout(() => fetchErrorSummaryStats(), 2400); // >>> NEW: Refresh error summary after action <<<
                 } else {
                     if(actionFeedback) actionFeedback.innerHTML = `<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Помилка ${action.toUpperCase()}: ${result.message}</div>`;
                 }
@@ -280,4 +490,3 @@
 <% } %>
 
 <%- include('partials/footer') %>
-
